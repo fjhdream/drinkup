@@ -1,0 +1,29 @@
+server:
+  servlet:
+    session:
+      timeout: 24h
+      cookie:
+        secure: true
+        http-only: true
+
+spring:
+  application:
+    name: drinkup
+  session:
+    redis:
+      flush-mode: on-save
+      namespace: spring:session
+
+aliyun:
+  sms:
+    access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID}
+    access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET}
+    sign-name: ${ALIYUN_SMS_SIGN_NAME}
+    template-code: ${ALIYUN_SMS_TEMPLATE_CODE}
+    max-retries: 3
+    verification-code-expire-minutes: 5
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    cool.drinkup: DEBUG
