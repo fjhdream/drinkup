@@ -8,10 +8,38 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 import org.springframework.session.web.context.AbstractHttpSessionApplicationInitializer;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSessionEvent;
+import jakarta.servlet.http.HttpSessionListener;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Configuration
 @EnableRedisHttpSession
-public class SessionConfig extends AbstractHttpSessionApplicationInitializer {
+public class SessionConfig extends AbstractHttpSessionApplicationInitializer implements WebMvcConfigurer {
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new SessionTimeoutRefreshInterceptor());
+    }
+
+    public static class SessionTimeoutRefreshInterceptor implements HandlerInterceptor {
+        @Override
+        public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                // Accessing the session is enough to refresh its timeout
+                session.getCreationTime();
+            }
+            return true;
+        }
+    }
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate(LettuceConnectionFactory connectionFactory) {
@@ -20,5 +48,20 @@ public class SessionConfig extends AbstractHttpSessionApplicationInitializer {
         template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
         template.setConnectionFactory(connectionFactory);
         return template;
+    }
+
+    @Bean
+    public HttpSessionListener httpSessionListener() {
+        return new HttpSessionListener() {
+            @Override
+            public void sessionCreated(HttpSessionEvent se) {
+                log.info("Session created: {}", se.getSession().getId());
+            }
+
+            @Override
+            public void sessionDestroyed(HttpSessionEvent se) {
+                log.info("Session destroyed: {}", se.getSession().getId());
+            }
+        };
     }
 } 
