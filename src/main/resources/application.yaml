@@ -27,3 +27,9 @@ logging:
   level:
     org.springframework.security: DEBUG
     cool.drinkup: DEBUG
+
+drinkup:
+  chat:
+    model: gpt-4o
+  bartender:
+    model: gpt-4o

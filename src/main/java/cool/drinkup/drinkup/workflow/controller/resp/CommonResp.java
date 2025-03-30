@@ -11,14 +11,14 @@ public class CommonResp<T> {
         CommonResp<T> resp = new CommonResp<>();
         resp.setData(data);
         resp.setMessage("success");
-        resp.setCode(200);
+        resp.setCode(0);
         return resp;
     }
 
     public static <T> CommonResp<T> error(String message) {
         CommonResp<T> resp = new CommonResp<>();
         resp.setMessage(message);
-        resp.setCode(500);
+        resp.setCode(-1);
         return resp;
     }
 }

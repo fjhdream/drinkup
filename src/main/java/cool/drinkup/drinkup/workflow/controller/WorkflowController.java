@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import cool.drinkup.drinkup.workflow.controller.req.WorkflowBartenderChatReq;
+import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserChatReq;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserReq;
 import cool.drinkup.drinkup.workflow.controller.resp.CommonResp;
 import cool.drinkup.drinkup.workflow.service.WorkflowService;
@@ -27,8 +29,8 @@ public class WorkflowController {
     private final WorkflowService workflowService;
 
     @Operation(
-        summary = "Process cocktail request",
-        description = "Processes user input for cocktail related workflow"
+        summary = "处理调酒单请求",
+        description = "处理用户输入的鸡尾酒相关工作流"
     )
     @ApiResponse(responseCode = "200", description = "Successfully processed cocktail request")
     @PostMapping("/cocktail")
@@ -41,8 +43,8 @@ public class WorkflowController {
     }
 
     @Operation(
-        summary = "Load wine data",
-        description = "Loads wine related data into the system"
+        summary = "加载酒类数据到向量数据库",
+        description = "将酒类相关数据加载到系统中"
     )
     @ApiResponse(responseCode = "200", description = "Successfully loaded wine data")
     @PostMapping("/load-wine")
@@ -50,5 +52,32 @@ public class WorkflowController {
         dataLoaderService.loadData();
         return ResponseEntity.ok().build();
     }
-    
-} 
+
+    @Operation(
+        summary = "与机器人聊天",
+        description = "与机器人进行对话"
+    )
+    @ApiResponse(responseCode = "200", description = "Successfully chatted with the bot")
+    @PostMapping("/chat")
+    public ResponseEntity<CommonResp<?>> chat(@RequestBody WorkflowUserChatReq userInput) {
+        var resp = workflowService.chat(userInput);
+        if (resp == null) {
+            return ResponseEntity.ok(CommonResp.error("Error chatting with the bot"));
+        }
+        return ResponseEntity.ok(CommonResp.success(resp));
+    }
+
+    @Operation(
+        summary = "与调酒师聊天",
+        description = "与调酒师进行对话"
+    )
+    @ApiResponse(responseCode = "200", description = "Successfully chatted with the bartender")
+    @PostMapping("/bartender")
+    public ResponseEntity<CommonResp<?>> mixDrink(@RequestBody WorkflowBartenderChatReq bartenderInput) {
+        var resp = workflowService.mixDrink(bartenderInput);
+        if (resp == null) {
+            return ResponseEntity.ok(CommonResp.error("Error mixing drink"));
+        }
+        return ResponseEntity.ok(CommonResp.success(resp));
+    }
+}
