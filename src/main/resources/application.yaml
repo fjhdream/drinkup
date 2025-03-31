@@ -13,6 +13,9 @@ spring:
     redis:
       flush-mode: on-save
       namespace: spring:session
+  threads:
+    virtual:
+      enabled: true
 
 aliyun:
   sms:
