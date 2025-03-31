@@ -1,6 +1,7 @@
 package cool.drinkup.drinkup.workflow.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,6 +35,7 @@ public class WorkflowController {
     )
     @ApiResponse(responseCode = "200", description = "Successfully processed cocktail request")
     @PostMapping("/cocktail")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommonResp<?>> processCocktailRequest(
         @Parameter(description = "User input for cocktail workflow") 
         @RequestBody WorkflowUserReq userInput
@@ -48,6 +50,7 @@ public class WorkflowController {
     )
     @ApiResponse(responseCode = "200", description = "Successfully loaded wine data")
     @PostMapping("/load-wine")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> loadWine() {
         dataLoaderService.loadData();
         return ResponseEntity.ok().build();
@@ -59,6 +62,7 @@ public class WorkflowController {
     )
     @ApiResponse(responseCode = "200", description = "Successfully chatted with the bot")
     @PostMapping("/chat")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommonResp<?>> chat(@RequestBody WorkflowUserChatReq userInput) {
         var resp = workflowService.chat(userInput);
         if (resp == null) {
@@ -73,6 +77,7 @@ public class WorkflowController {
     )
     @ApiResponse(responseCode = "200", description = "Successfully chatted with the bartender")
     @PostMapping("/bartender")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommonResp<?>> mixDrink(@RequestBody WorkflowBartenderChatReq bartenderInput) {
         var resp = workflowService.mixDrink(bartenderInput);
         if (resp == null) {

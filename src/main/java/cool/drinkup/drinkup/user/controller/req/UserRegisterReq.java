@@ -10,7 +10,7 @@ public class UserRegisterReq {
 
     @NotBlank(message = "手机号不能为空")
     @Schema(description = "手机号")
-    private String phoneNumber;
+    private String phone;
 
     @NotBlank(message = "验证码不能为空")
     @Schema(description = "验证码")

@@ -1,5 +1,6 @@
 package cool.drinkup.drinkup.user.service;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,15 +21,11 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
-    }
-    
-    @Transactional(readOnly = true)
-    public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
     }
 
     @Transactional(readOnly = true)
@@ -36,19 +33,29 @@ public class UserService {
         return userRepository.findByPhone(phone);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<User> findById(Long id) {
+        return userRepository.findById(id);
+    }
+
     @Transactional
     public User registerUser(UserRegisterReq registerReq) {
         User user = userMapper.toUser(registerReq);
         user.setUsername(randomUserName());
-        // 先保存用户以获取ID
-        user = userRepository.save(user);
-        user.setNickname("品鉴师" + String.format("%06d", user.getId()));
+        user.setNickname("品鉴师000000");
+        user.setPassword(generateRandomPassword());
         // 设置默认角色（如果没有提供）
         if (user.getRoles() == null || user.getRoles().isEmpty()) {
             Set<String> roles = new HashSet<>();
             roles.add(RoleEnum.USER.getRole());
             user.setRoles(roles);
         }
+        
+        // 保存用户并获取ID
+        user = userRepository.save(user);
+        
+        // 使用ID更新昵称并再次保存
+        user.setNickname("品鉴师" + String.format("%06d", user.getId()));
         return userRepository.save(user);
     }
 
@@ -61,6 +68,18 @@ public class UserService {
             randomUsername.append(alphabet.charAt(random.nextInt(alphabet.length())));
         }
         return randomUsername.toString();
+    }
+
+    public String generateRandomPassword() {
+        // 生成一个10位随机密码，包含大小写字母、数字和特殊字符
+        StringBuilder password = new StringBuilder();
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+";
+        java.util.Random random = new java.util.Random();
+        for (int i = 0; i < 10; i++) {
+            password.append(characters.charAt(random.nextInt(characters.length())));
+        }
+        String rawPassword = password.toString();
+        return passwordEncoder.encode(rawPassword);
     }
 
     @Transactional
@@ -95,5 +114,10 @@ public class UserService {
         return userRepository.findByUsername(username)
                 .map(user -> user.getRoles() != null && user.getRoles().contains(roleName))
                 .orElse(false);
+    }
+
+    @Transactional
+    public void save(User user) {
+        userRepository.save(user);
     }
 } 

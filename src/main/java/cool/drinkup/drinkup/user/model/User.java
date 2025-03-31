@@ -40,9 +40,6 @@ public class User {
     private String password;
     
     @Column(nullable = true, unique = true)
-    private String email;
-    
-    @Column(nullable = true, unique = true)
     private String phone;
 
     private boolean enabled = true;

@@ -10,7 +10,7 @@ public class LoginRequest {
 
     @NotBlank(message = "手机号不能为空")
     @Schema(description = "手机号", example = "13800138000")
-    private String phoneNumber;
+    private String phone;
 
     @NotBlank(message = "验证码不能为空")
     @Schema(description = "验证码", example = "123456")

@@ -11,14 +11,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import cool.drinkup.drinkup.user.controller.resp.UserProfileResp;
 import cool.drinkup.drinkup.user.mapper.UserMapper;
-import cool.drinkup.drinkup.user.repository.UserRepository;
+import cool.drinkup.drinkup.user.model.User;
 import cool.drinkup.drinkup.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,7 +34,6 @@ import lombok.extern.slf4j.Slf4j;
 public class UserController {
 
     private final UserService userService;
-    private final UserRepository userRepository;
     private final UserMapper userMapper;
 
     @Operation(summary = "获取个人资料", description = "获取当前登录用户的个人资料信息")
@@ -56,54 +53,7 @@ public class UserController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
-    
-    @Operation(summary = "获取所有用户", description = "管理员获取系统中所有用户列表")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "获取成功"),
-        @ApiResponse(responseCode = "403", description = "权限不足，需要管理员权限")
-    })
-    @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<Map<String, Object>>> getAllUsers() {
-        List<Map<String, Object>> users = userRepository.findAll().stream()
-                .map(user -> {
-                    Map<String, Object> userMap = new HashMap<>();
-                    userMap.put("id", user.getId());
-                    userMap.put("username", user.getUsername());
-                    userMap.put("email", user.getEmail());
-                    userMap.put("enabled", user.isEnabled());
-                    userMap.put("roles", user.getRoles());
-                    return userMap;
-                })
-                .collect(Collectors.toList());
-        
-        return ResponseEntity.ok(users);
-    }
-    
-    @Operation(summary = "获取指定用户", description = "管理员获取指定ID的用户信息")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "获取成功"),
-        @ApiResponse(responseCode = "404", description = "用户不存在"),
-        @ApiResponse(responseCode = "403", description = "权限不足，需要管理员权限")
-    })
-    @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getUserById(
-            @Parameter(description = "用户ID") 
-            @PathVariable Long id) {
-        return userRepository.findById(id)
-                .map(user -> {
-                    Map<String, Object> userMap = new HashMap<>();
-                    userMap.put("id", user.getId());
-                    userMap.put("username", user.getUsername());
-                    userMap.put("email", user.getEmail());
-                    userMap.put("enabled", user.isEnabled());
-                    userMap.put("roles", user.getRoles());
-                    return ResponseEntity.ok(userMap);
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-    
+
     @Operation(summary = "更新用户状态", description = "管理员启用或禁用用户账户")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "更新成功"),
@@ -112,28 +62,32 @@ public class UserController {
         @ApiResponse(responseCode = "403", description = "权限不足，需要管理员权限")
     })
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> updateUserStatus(
             @Parameter(description = "用户ID") 
             @PathVariable Long id,
             @Parameter(description = "用户状态信息，包含enabled字段") 
             @RequestBody Map<String, Boolean> request) {
-        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        log.info("更新用户状态: {}", username);
         Boolean enabled = request.get("enabled");
         if (enabled == null) {
             return ResponseEntity.badRequest().body("请提供是否启用的状态");
         }
-        
-        return userRepository.findById(id)
-                .map(user -> {
-                    user.setEnabled(enabled);
-                    userRepository.save(user);
-                    return ResponseEntity.ok(Map.of(
-                            "message", "用户状态已更新",
-                            "username", user.getUsername(),
-                            "enabled", user.isEnabled()
-                    ));
-                })
-                .orElse(ResponseEntity.notFound().build());
+        Optional<User> user = userService.findById(id);
+        if (user.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        if (!user.get().getUsername().equals(username)) {
+            return ResponseEntity.badRequest().body("不能修改其他用户");
+        }
+        user.get().setEnabled(enabled);
+        userService.save(user.get());
+        return ResponseEntity.ok(Map.of(
+                "message", "用户状态已更新",
+                "username", user.get().getUsername(),
+                "enabled", user.get().isEnabled()
+        ));
     }
 } 

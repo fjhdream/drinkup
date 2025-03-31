@@ -3,6 +3,7 @@ package cool.drinkup.drinkup.workflow.service;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -43,7 +44,8 @@ public class WorkflowService {
 
     private final ObjectMapper objectMapper;
 
-    public WorkflowService(VectorStore vectorStore, WineRepository wineRepository, WineMapper wineMapper, ChatBotService chatBotService, BartenderService bartenderService, ObjectMapper objectMapper) {
+    public WorkflowService(VectorStore vectorStore, WineRepository wineRepository, WineMapper wineMapper, 
+            ChatBotService chatBotService, BartenderService bartenderService,@Qualifier("snakeCaseObjectMapper") ObjectMapper objectMapper) {
         this.vectorStore = vectorStore;
         this.wineRepository = wineRepository;
         this.wineMapper = wineMapper;
