@@ -1,5 +1,8 @@
 package cool.drinkup.drinkup.workflow.controller.resp;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.List;
 
 import lombok.Data;
@@ -32,11 +35,17 @@ public class WorkflowUserWineVo {
     private List<String> tagsOthers;
 
     @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Ingredient {
+        @JsonAlias("ingredient_name")
         private String ingredientName;
+        @JsonAlias("ingredient_icon_type")
         private String ingredientIconType;
+        @JsonAlias("ml")
         private String ml;
+        @JsonAlias("oz")
         private String oz;
+        @JsonAlias("cl")
         private String cl;
     }
 }
