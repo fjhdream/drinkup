@@ -5,6 +5,7 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.ResponseFormat;
@@ -18,10 +19,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserChatReq.WorkflowUserChatVo;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
 
 @Slf4j
 @Service
@@ -45,6 +49,54 @@ public class ChatBotService {
         String text = response.getResult().getOutput().getText();
         log.info("Chat response: {}", text);
         return text;
+    }
+
+    public CompletableFuture<Void> chatStream(List<WorkflowUserChatVo> messages, Consumer<String> onChunk) {
+        var prompt = buildPrompt(messages);
+        Flux<ChatResponse> flux = chatModel.stream(prompt);
+        
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        
+        // Process each chunk as it arrives
+        flux.subscribe(
+            chunk -> {
+                if (chunk.getResult() == null) {
+                    log.debug("Received null result chunk, completing stream");
+                    future.complete(null);
+                    return;
+                }
+                String text = chunk.getResult().getOutput().getText();
+                log.debug("Chat stream chunk: {}", text);
+                onChunk.accept(text);
+            },
+            error -> {
+                log.error("Error in chat stream: {}", error.getMessage());
+                future.completeExceptionally(error);
+            },
+            () -> {
+                log.debug("Chat stream completed");
+                future.complete(null);
+            }
+        );
+        
+        return future;
+    }
+
+    public Flux<String> chatStreamFlux(List<WorkflowUserChatVo> messages) {
+        var prompt = buildPrompt(messages);
+        return chatModel.stream(prompt)
+            .map(response -> {
+                if (response.getResult() == null) {
+                    return "";
+                }
+                String text = response.getResult().getOutput().getText();
+                log.debug("Chat stream chunk: {}", text);
+                if (text == null) {
+                    return "";
+                }
+                return text;
+            })
+            .filter(text -> !text.isEmpty());
     }
 
     private Prompt buildPrompt(List<WorkflowUserChatVo> messages) {
