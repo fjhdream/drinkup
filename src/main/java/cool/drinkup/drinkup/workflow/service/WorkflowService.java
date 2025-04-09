@@ -26,7 +26,7 @@ import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWIneResp;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWineVo;
 import cool.drinkup.drinkup.workflow.mapper.WineMapper;
 import cool.drinkup.drinkup.workflow.model.Wine;
-import cool.drinkup.drinkup.workflow.respository.WineRepository;
+import cool.drinkup.drinkup.workflow.repository.WineRepository;
 import cool.drinkup.drinkup.workflow.service.bartender.BartenderService;
 import cool.drinkup.drinkup.workflow.service.chat.ChatBotService;
 import lombok.extern.slf4j.Slf4j;

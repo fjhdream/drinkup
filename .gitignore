@@ -35,5 +35,6 @@ build/
 
 
 ### Drink Up ###
+.env
 docs/data/
 src/main/resources/application-dev.yaml

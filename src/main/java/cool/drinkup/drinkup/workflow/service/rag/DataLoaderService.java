@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import cool.drinkup.drinkup.workflow.model.Wine;
-import cool.drinkup.drinkup.workflow.respository.WineRepository;
+import cool.drinkup.drinkup.workflow.repository.WineRepository;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
