@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 public class WorkflowUserChatReq {
     private List<WorkflowUserChatVo> messages;
+    private List<Long> barIds;
 
     @Data
     public static class WorkflowUserChatVo {

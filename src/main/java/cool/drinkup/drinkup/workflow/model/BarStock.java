@@ -20,4 +20,8 @@ public class BarStock {
     private String name;
 
     private String type;
+
+    public String getDescription() {
+        return "[库存类型: " + type + " 库存名称: " + name + "]";
+    }
 }

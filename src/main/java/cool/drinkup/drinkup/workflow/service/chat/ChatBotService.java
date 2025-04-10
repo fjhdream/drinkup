@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserChatReq.WorkflowUserChatVo;
+import cool.drinkup.drinkup.workflow.service.chat.dto.ChatParams;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 
@@ -43,16 +44,16 @@ public class ChatBotService {
         this.promptTemplate = new String(promptResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
     }
 
-    public String chat(List<WorkflowUserChatVo> messages) {
-        var prompt = buildPrompt(messages);
+    public String chat(List<WorkflowUserChatVo> messages, ChatParams params) {
+        var prompt = buildPrompt(messages, params);
         var response = chatModel.call(prompt);
         String text = response.getResult().getOutput().getText();
         log.info("Chat response: {}", text);
         return text;
     }
 
-    public CompletableFuture<Void> chatStream(List<WorkflowUserChatVo> messages, Consumer<String> onChunk) {
-        var prompt = buildPrompt(messages);
+    public CompletableFuture<Void> chatStream(List<WorkflowUserChatVo> messages, ChatParams params, Consumer<String> onChunk) {
+        var prompt = buildPrompt(messages, params);
         Flux<ChatResponse> flux = chatModel.stream(prompt);
         
         CompletableFuture<Void> future = new CompletableFuture<>();
@@ -82,8 +83,8 @@ public class ChatBotService {
         return future;
     }
 
-    public Flux<String> chatStreamFlux(List<WorkflowUserChatVo> messages) {
-        var prompt = buildPrompt(messages);
+    public Flux<String> chatStreamFlux(List<WorkflowUserChatVo> messages, ChatParams params) {
+        var prompt = buildPrompt(messages, params);
         return chatModel.stream(prompt)
             .map(response -> {
                 if (response.getResult() == null) {
@@ -99,8 +100,8 @@ public class ChatBotService {
             .filter(text -> !text.isEmpty());
     }
 
-    private Prompt buildPrompt(List<WorkflowUserChatVo> messages) {
-        String systemPrompt = promptTemplate.replace("{userStock}", "");
+    private Prompt buildPrompt(List<WorkflowUserChatVo> messages, ChatParams params) {
+        String systemPrompt = promptTemplate.replace("{userStock}", params.getUserStock());
 
         var systemMessage = new SystemMessage(systemPrompt);
         var historyMessages = messages.stream()

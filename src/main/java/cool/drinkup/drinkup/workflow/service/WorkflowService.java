@@ -5,14 +5,12 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.util.CollectionUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -25,10 +23,13 @@ import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserChatResp;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWIneResp;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWineVo;
 import cool.drinkup.drinkup.workflow.mapper.WineMapper;
+import cool.drinkup.drinkup.workflow.model.Bar;
 import cool.drinkup.drinkup.workflow.model.Wine;
 import cool.drinkup.drinkup.workflow.repository.WineRepository;
+import cool.drinkup.drinkup.workflow.service.bar.BarService;
 import cool.drinkup.drinkup.workflow.service.bartender.BartenderService;
 import cool.drinkup.drinkup.workflow.service.chat.ChatBotService;
+import cool.drinkup.drinkup.workflow.service.chat.dto.ChatParams;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 
@@ -46,15 +47,18 @@ public class WorkflowService {
 
     private final BartenderService bartenderService;
 
+    private final BarService barService;
+
     private final ObjectMapper objectMapper;
 
     public WorkflowService(VectorStore vectorStore, WineRepository wineRepository, WineMapper wineMapper, 
-            ChatBotService chatBotService, BartenderService bartenderService,@Qualifier("snakeCaseObjectMapper") ObjectMapper objectMapper) {
+            ChatBotService chatBotService, BartenderService bartenderService, BarService barService, @Qualifier("snakeCaseObjectMapper") ObjectMapper objectMapper) {
         this.vectorStore = vectorStore;
         this.wineRepository = wineRepository;
         this.wineMapper = wineMapper;
         this.chatBotService = chatBotService;
         this.bartenderService = bartenderService;
+        this.barService = barService;
         this.objectMapper = objectMapper;
     }
 
@@ -77,7 +81,9 @@ public class WorkflowService {
     }
 
     public WorkflowUserChatResp chat(WorkflowUserChatReq userInput) {
-        var chatWithUser = chatBotService.chat(userInput.getMessages());
+        List<Bar> bars = barService.getUserBarByBarIds(userInput.getBarIds());
+        ChatParams chatParams = buildChatParams(bars);
+        var chatWithUser = chatBotService.chat(userInput.getMessages(), chatParams);
         var json = extractJson(chatWithUser);
         try {
             var chatBotResponse = objectMapper.readValue(json, WorkflowUserChatResp.class);
@@ -88,48 +94,10 @@ public class WorkflowService {
         }
     }
 
-    public void chatStream(WorkflowUserChatReq userInput, SseEmitter emitter) throws IOException {
-        StringBuilder fullResponse = new StringBuilder();
-        
-        // Set up error handler for the emitter
-        emitter.onError(ex -> {
-            log.error("Emitter error: {}", ex.getMessage());
-        });
-        
-        emitter.onCompletion(() -> {
-            log.info("Emitter completed");
-        });
-
-        // Use the streaming chat method
-        CompletableFuture<Void> future = chatBotService.chatStream(userInput.getMessages(), chunk -> {
-            try {
-                // Append the chunk to the full response
-                fullResponse.append(chunk);
-                
-                // Send the chunk to the client with proper error handling
-                try {
-                    emitter.send(SseEmitter.event()
-                        .name("chunk")
-                        .data(chunk));
-                } catch (IOException e) {
-                    log.error("Error sending chunk, client likely disconnected: {}", e.getMessage());
-                    try {
-                        emitter.complete();
-                    } catch (Exception ex) {
-                        log.warn("Error completing emitter: {}", ex.getMessage());
-                    }
-                    // Throw exception to propagate error upward
-                    throw e;
-                }
-            } catch (Exception e) {
-                log.error("Error processing chunk: {}", e.getMessage());
-                emitter.completeWithError(e);
-            }
-        });
-    }
-
     public Flux<String> chatStreamFlux(WorkflowUserChatReq userInput) {
-        return chatBotService.chatStreamFlux(userInput.getMessages());
+        List<Bar> bars = barService.getUserBarByBarIds(userInput.getBarIds());
+        ChatParams chatParams = buildChatParams(bars);
+        return chatBotService.chatStreamFlux(userInput.getMessages(), chatParams);
     }
 
     private String extractJson(String chatWithUser) {
@@ -160,5 +128,20 @@ public class WorkflowService {
             log.error("Error parsing JSON: {}", e.getMessage());
             return null;
         }
+    }
+
+    private ChatParams buildChatParams(List<Bar> bars) {
+        ChatParams chatParams = new ChatParams();
+        chatParams.setUserStock(buildBarDescription(bars));
+        return chatParams;
+    }
+
+    private String buildBarDescription(List<Bar> bars) {
+        if (CollectionUtils.isEmpty(bars)) {
+            return "null";
+        }
+        return bars.stream()
+                .map(Bar::getDescription)
+                .collect(Collectors.joining("\n"));
     }
 }
