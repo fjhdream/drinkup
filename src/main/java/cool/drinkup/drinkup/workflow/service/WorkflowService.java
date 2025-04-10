@@ -20,7 +20,7 @@ import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserChatReq;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserReq;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowBartenderChatResp;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserChatResp;
-import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWIneResp;
+import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWineResp;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWineVo;
 import cool.drinkup.drinkup.workflow.mapper.WineMapper;
 import cool.drinkup.drinkup.workflow.model.Bar;
@@ -28,6 +28,7 @@ import cool.drinkup.drinkup.workflow.model.Wine;
 import cool.drinkup.drinkup.workflow.repository.WineRepository;
 import cool.drinkup.drinkup.workflow.service.bar.BarService;
 import cool.drinkup.drinkup.workflow.service.bartender.BartenderService;
+import cool.drinkup.drinkup.workflow.service.bartender.dto.BartenderParams;
 import cool.drinkup.drinkup.workflow.service.chat.ChatBotService;
 import cool.drinkup.drinkup.workflow.service.chat.dto.ChatParams;
 import lombok.extern.slf4j.Slf4j;
@@ -51,8 +52,9 @@ public class WorkflowService {
 
     private final ObjectMapper objectMapper;
 
-    public WorkflowService(VectorStore vectorStore, WineRepository wineRepository, WineMapper wineMapper, 
-            ChatBotService chatBotService, BartenderService bartenderService, BarService barService, @Qualifier("snakeCaseObjectMapper") ObjectMapper objectMapper) {
+    public WorkflowService(VectorStore vectorStore, WineRepository wineRepository, WineMapper wineMapper,
+            ChatBotService chatBotService, BartenderService bartenderService, BarService barService,
+            @Qualifier("snakeCaseObjectMapper") ObjectMapper objectMapper) {
         this.vectorStore = vectorStore;
         this.wineRepository = wineRepository;
         this.wineMapper = wineMapper;
@@ -62,9 +64,10 @@ public class WorkflowService {
         this.objectMapper = objectMapper;
     }
 
-    public WorkflowUserWIneResp processCocktailRequest(WorkflowUserReq userInput) {
+    public WorkflowUserWineResp processCocktailRequest(WorkflowUserReq userInput) {
         String userInputText = userInput.getUserInput();
-        List<Document> results = vectorStore.similaritySearch(SearchRequest.builder().query(userInputText).topK(2).build());
+        List<Document> results = vectorStore
+                .similaritySearch(SearchRequest.builder().query(userInputText).topK(2).build());
         log.info("Results: {}", results);
         List<Long> wineIds = results.stream()
                 .map(Document::getMetadata)
@@ -75,7 +78,7 @@ public class WorkflowService {
         List<WorkflowUserWineVo> workflowUserWineVos = wines.stream()
                 .map(wineMapper::toWineVo)
                 .collect(Collectors.toList());
-        WorkflowUserWIneResp workflowUserWIneResp = new WorkflowUserWIneResp();
+        WorkflowUserWineResp workflowUserWIneResp = new WorkflowUserWineResp();
         workflowUserWIneResp.setWines(workflowUserWineVos);
         return workflowUserWIneResp;
     }
@@ -101,25 +104,26 @@ public class WorkflowService {
     }
 
     private String extractJson(String chatWithUser) {
-        if (!chatWithUser.contains("```json")) {
+        if ( !chatWithUser.contains("```json")) {
             return chatWithUser;
         }
         // Extract JSON content between ```json and ``` markers
         String jsonPattern = "```json\\s*(.*?)\\s*```";
         Pattern pattern = Pattern.compile(jsonPattern, Pattern.DOTALL);
         Matcher matcher = pattern.matcher(chatWithUser);
-        
-        if (matcher.find()) {
+
+        if ( matcher.find()) {
             return matcher.group(1).trim();
         }
-        
+
         // If no JSON found in the expected format, return the original string
         // This handles cases where the response might not be properly formatted
         return chatWithUser;
     }
 
     public WorkflowBartenderChatResp mixDrink(WorkflowBartenderChatReq bartenderInput) {
-        var chatWithBartender = bartenderService.generateDrink(bartenderInput.getMessages());
+        var bartenderParam = buildBartenderParams(bartenderInput);
+        var chatWithBartender = bartenderService.generateDrink(bartenderInput.getMessages(), bartenderParam);
         var json = extractJson(chatWithBartender);
         try {
             var chatBotResponse = objectMapper.readValue(json, WorkflowBartenderChatResp.class);
@@ -130,6 +134,17 @@ public class WorkflowService {
         }
     }
 
+    private BartenderParams buildBartenderParams(WorkflowBartenderChatReq bartenderInput) {
+        List<Bar> userBars = barService.getUserBarByBarIds(bartenderInput.getBarIds());
+        String userStock = buildBarDescription(userBars);
+        return BartenderParams.builder()
+                .userStock(userStock)
+                .userDemand(bartenderInput.getUserDemand())
+                .theme(bartenderInput.getTheme())
+                .themeFormula(bartenderInput.getThemeFormula())
+                .build();
+    }
+
     private ChatParams buildChatParams(List<Bar> bars) {
         ChatParams chatParams = new ChatParams();
         chatParams.setUserStock(buildBarDescription(bars));
@@ -137,7 +152,7 @@ public class WorkflowService {
     }
 
     private String buildBarDescription(List<Bar> bars) {
-        if (CollectionUtils.isEmpty(bars)) {
+        if ( CollectionUtils.isEmpty(bars)) {
             return "null";
         }
         return bars.stream()

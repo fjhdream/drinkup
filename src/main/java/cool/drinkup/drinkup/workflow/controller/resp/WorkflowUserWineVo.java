@@ -8,6 +8,7 @@ import java.util.List;
 import lombok.Data;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkflowUserWineVo {
     private String name;
     private String description;
@@ -29,7 +30,7 @@ public class WorkflowUserWineVo {
     private String tagGlass;
     private String tagMixology;
     private String tagCocktailType;
-    private String tagFlavor;
+    private List<String> tagFlavor;
     private String tagComplexity;
     private String tagAbv;
     private List<String> tagsOthers;

@@ -1,5 +1,6 @@
 package cool.drinkup.drinkup.workflow.service.bartender;
 
+import org.apache.commons.text.StringSubstitutor;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -18,9 +19,12 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowBartenderChatReq.WorkflowBartenderChatVo;
+import cool.drinkup.drinkup.workflow.service.bar.BarService;
+import cool.drinkup.drinkup.workflow.service.bartender.dto.BartenderParams;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -28,28 +32,32 @@ import lombok.extern.slf4j.Slf4j;
 public class BartenderService {
 
     private final ChatModel chatModel;
+    private final BarService barService;
     private final String promptTemplate;
 
     @Value("${drinkup.bartender.model}")
     private String model;
 
-    public BartenderService(@Qualifier("openAiChatModel") ChatModel chatModel, ResourceLoader resourceLoader)
+    public BartenderService(@Qualifier("openAiChatModel") ChatModel chatModel, BarService barService, ResourceLoader resourceLoader)
             throws IOException {
         this.chatModel = chatModel;
         Resource promptResource = resourceLoader.getResource("classpath:prompts/bartender-prompt.txt");
         this.promptTemplate = new String(promptResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        this.barService = barService;
     }
 
-    public String generateDrink(List<WorkflowBartenderChatVo> messages) {
-        var prompt = buildPrompt(messages);
+    public String generateDrink(List<WorkflowBartenderChatVo> messages, BartenderParams bartenderParams) {
+        var prompt = buildPrompt(messages, bartenderParams);
         var response = chatModel.call(prompt);
         String text = response.getResult().getOutput().getText();
         log.info("Chat response: {}", text);
         return text;
     }
 
-    private Prompt buildPrompt(List<WorkflowBartenderChatVo> messages) {
-        String systemPrompt = promptTemplate.replace("{userStock}", "");
+    private Prompt buildPrompt(List<WorkflowBartenderChatVo> messages, BartenderParams bartenderParams) {
+        Map<String,String> substituterMap = bartenderParams.toSubstituterMap();
+        StringSubstitutor substitutor = new StringSubstitutor(substituterMap);
+        String systemPrompt = substitutor.replace(promptTemplate);
 
         var systemMessage = new SystemMessage(systemPrompt);
         var historyMessages = messages.stream()

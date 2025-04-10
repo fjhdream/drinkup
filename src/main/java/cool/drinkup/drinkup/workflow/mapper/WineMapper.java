@@ -22,7 +22,7 @@ public interface WineMapper {
 
     @Mapping(source = "ingredients", target = "ingredients", qualifiedByName = "jsonToIngredientsList")
     @Mapping(source = "tagBaseSpirit", target = "tagBaseSpirit", qualifiedByName = "jsonToStringList")
-    @Mapping(source = "tagFlavor", target = "tagFlavor")
+    @Mapping(source = "tagFlavor", target = "tagFlavor", qualifiedByName = "jsonToStringList")
     @Mapping(source = "tagsOthers", target = "tagsOthers", qualifiedByName = "jsonToStringList")
     WorkflowUserWineVo toWineVo(Wine wine);
 

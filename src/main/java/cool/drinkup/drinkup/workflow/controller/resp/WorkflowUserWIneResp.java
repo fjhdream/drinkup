@@ -5,6 +5,6 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public class WorkflowUserWIneResp {
+public class WorkflowUserWineResp {
     private List<WorkflowUserWineVo> wines;
 }
