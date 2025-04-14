@@ -17,6 +17,7 @@ import cool.drinkup.drinkup.workflow.controller.req.WorkflowBartenderChatReq;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserChatReq;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserReq;
 import cool.drinkup.drinkup.workflow.controller.resp.CommonResp;
+import cool.drinkup.drinkup.workflow.controller.resp.WorkflowBartenderChatResp;
 import cool.drinkup.drinkup.workflow.service.WorkflowService;
 import cool.drinkup.drinkup.workflow.service.rag.DataLoaderService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -97,7 +98,7 @@ public class WorkflowController {
     @ApiResponse(responseCode = "200", description = "Successfully chatted with the bartender")
     @PostMapping("/bartender")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CommonResp<?>> mixDrink(@RequestBody WorkflowBartenderChatReq bartenderInput) {
+    public ResponseEntity<CommonResp<WorkflowBartenderChatResp>> mixDrink(@RequestBody WorkflowBartenderChatReq bartenderInput) {
         var resp = workflowService.mixDrink(bartenderInput);
         if (resp == null) {
             return ResponseEntity.ok(CommonResp.error("Error mixing drink"));

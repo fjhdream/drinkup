@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 import java.util.Optional;
 
+import cool.drinkup.drinkup.user.controller.resp.CommonResp;
 import cool.drinkup.drinkup.user.controller.resp.UserProfileResp;
 import cool.drinkup.drinkup.user.mapper.UserMapper;
 import cool.drinkup.drinkup.user.model.User;
@@ -42,16 +43,17 @@ public class UserController {
         @ApiResponse(responseCode = "404", description = "用户不存在")
     })
     @GetMapping("/profile")
-    public ResponseEntity<?> getUserProfile() {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<CommonResp<UserProfileResp>> getUserProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         log.info("获取个人资料: {}", username);
         return userService.findByUsername(username)
                 .map(user -> {
                     UserProfileResp userProfileResp = userMapper.toUserProfileResp(user);
-                    return ResponseEntity.ok(userProfileResp);
+                    return ResponseEntity.ok(CommonResp.success(userProfileResp));
                 })
-                .orElse(ResponseEntity.notFound().build());
+                .orElse(ResponseEntity.ok(CommonResp.error("用户不存在")));
     }
 
     @Operation(summary = "更新用户状态", description = "管理员启用或禁用用户账户")
@@ -63,7 +65,7 @@ public class UserController {
     })
     @PutMapping("/{id}/status")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> updateUserStatus(
+    public ResponseEntity<CommonResp<Map<String, Object>>> updateUserStatus(
             @Parameter(description = "用户ID") 
             @PathVariable Long id,
             @Parameter(description = "用户状态信息，包含enabled字段") 
@@ -73,21 +75,21 @@ public class UserController {
         log.info("更新用户状态: {}", username);
         Boolean enabled = request.get("enabled");
         if (enabled == null) {
-            return ResponseEntity.badRequest().body("请提供是否启用的状态");
+            return ResponseEntity.ok(CommonResp.error("请提供是否启用的状态"));
         }
         Optional<User> user = userService.findById(id);
         if (user.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(CommonResp.error("用户不存在"));
         }
         if (!user.get().getUsername().equals(username)) {
-            return ResponseEntity.badRequest().body("不能修改其他用户");
+            return ResponseEntity.ok(CommonResp.error("不能修改其他用户"));
         }
         user.get().setEnabled(enabled);
         userService.save(user.get());
-        return ResponseEntity.ok(Map.of(
+        return ResponseEntity.ok(CommonResp.success(Map.of(
                 "message", "用户状态已更新",
                 "username", user.get().getUsername(),
                 "enabled", user.get().isEnabled()
-        ));
+        )));
     }
-} 
+}
