@@ -44,6 +44,8 @@ public class WorkflowService {
 
     private final WineMapper wineMapper;
 
+    private final UserWineService userWineService;
+
     private final ChatBotService chatBotService;
 
     private final BartenderService bartenderService;
@@ -53,11 +55,12 @@ public class WorkflowService {
     private final ObjectMapper objectMapper;
 
     public WorkflowService(VectorStore vectorStore, WineRepository wineRepository, WineMapper wineMapper,
-            ChatBotService chatBotService, BartenderService bartenderService, BarService barService,
+            UserWineService userWineService, ChatBotService chatBotService, BartenderService bartenderService, BarService barService,
             @Qualifier("snakeCaseObjectMapper") ObjectMapper objectMapper) {
         this.vectorStore = vectorStore;
         this.wineRepository = wineRepository;
         this.wineMapper = wineMapper;
+        this.userWineService = userWineService;
         this.chatBotService = chatBotService;
         this.bartenderService = bartenderService;
         this.barService = barService;
@@ -127,6 +130,7 @@ public class WorkflowService {
         var json = extractJson(chatWithBartender);
         try {
             var chatBotResponse = objectMapper.readValue(json, WorkflowBartenderChatResp.class);
+            userWineService.saveUserWine(chatBotResponse);
             return chatBotResponse;
         } catch (JsonProcessingException e) {
             log.error("Error parsing JSON: {}", e.getMessage());

@@ -12,12 +12,14 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "wine")
+@Table(name = "user_wine")
 @Data
-public class Wine {
+public class UserWine {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name = "user_id")
+    private Long userId;
     private String name;
     private String description;
     private String baseIngredient;
@@ -50,4 +52,4 @@ public class Wine {
     @Column(columnDefinition = "json")
     @JdbcTypeCode(SqlTypes.JSON)
     private String tagsOthers;
-}
+} 
