@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-import cool.drinkup.drinkup.user.controller.req.UserRegisterReq;
+import cool.drinkup.drinkup.user.controller.req.LoginRequest;
 import cool.drinkup.drinkup.user.mapper.UserMapper;
 import cool.drinkup.drinkup.user.model.RoleEnum;
 import cool.drinkup.drinkup.user.model.User;
@@ -39,8 +39,8 @@ public class UserService {
     }
 
     @Transactional
-    public User registerUser(UserRegisterReq registerReq) {
-        User user = userMapper.toUser(registerReq);
+    public User registerUser(LoginRequest loginRequest) {
+        User user = userMapper.toUser(loginRequest);
         user.setUsername(randomUserName());
         user.setNickname("品鉴师000000");
         user.setPassword(generateRandomPassword());

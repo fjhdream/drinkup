@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 import cool.drinkup.drinkup.external.sms.SmsSender;
 import cool.drinkup.drinkup.user.controller.req.LoginRequest;
 import cool.drinkup.drinkup.user.controller.req.PhoneNumberRequest;
-import cool.drinkup.drinkup.user.controller.req.UserRegisterReq;
 import cool.drinkup.drinkup.user.controller.resp.CommonResp;
 import cool.drinkup.drinkup.user.mapper.UserMapper;
 import cool.drinkup.drinkup.user.model.User;
@@ -68,28 +67,6 @@ public class AuthController {
         return String.valueOf(code);
     }
 
-    @Operation(summary = "用户注册", description = "注册新用户账号")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "注册成功"),
-            @ApiResponse(responseCode = "400", description = "注册失败，可能是用户名已存在或其他验证错误")
-    })
-    @PostMapping("/register")
-    public ResponseEntity<CommonResp<?>> registerUser(
-            @Parameter(description = "用户注册信息，包含手机号, 验证码等") @Valid @RequestBody UserRegisterReq registerReq) {
-        try {
-            //TODO: 暂时关闭手机验证码
-            // if (!smsSender.verifySms(registerReq.getPhone(), registerReq.getVerificationCode())) {
-            //     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            //             .body("验证码错误或已过期");
-            // }
-            User registeredUser = userService.registerUser(registerReq);
-            return ResponseEntity.ok(CommonResp.success(registeredUser));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(CommonResp.error("Registration failed: " + e.getMessage()));
-        }
-    }
-
     @Operation(summary = "用户登录", description = "用户使用手机号和验证码登录")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "登录成功"),
@@ -112,14 +89,28 @@ public class AuthController {
             // }
 
             // 查找用户
-            User user = userService.findByPhone(phoneNumber)
-                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            User user = userService.findByPhone(phoneNumber).orElse(null);
+            
+            if (user == null) {
+                user = userService.registerUser(loginRequest);
+            }
+
+            // 创建 DrinkupUserDetails
+            cool.drinkup.drinkup.user.model.DrinkupUserDetails userDetails = new cool.drinkup.drinkup.user.model.DrinkupUserDetails(
+                    user.getId(),
+                    user.getUsername(),
+                    "", // empty password as we're using verification code
+                    true,
+                    user.getRoles().stream()
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                        .collect(Collectors.toList())
+            );
 
             // 创建认证信息
             Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    user.getUsername(), null, user.getRoles().stream()
-                            .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                            .collect(Collectors.toList()));
+                    userDetails,
+                    null,
+                    userDetails.getAuthorities());
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -130,7 +121,6 @@ public class AuthController {
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "登录成功");
-            response.put("sessionId", session.getId());
             response.put("user", userMapper.toUserProfileResp(user));
 
             return ResponseEntity.ok(CommonResp.success(response));
