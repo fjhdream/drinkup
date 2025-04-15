@@ -1,9 +1,13 @@
 package cool.drinkup.drinkup.workflow.controller;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import cool.drinkup.drinkup.workflow.controller.resp.CommonResp;
@@ -44,5 +48,24 @@ public class WineController {
         }
         WorkflowUserWineVo wineVo = wineMapper.toWineVo(wineById);
         return ResponseEntity.ok(CommonResp.success(wineVo));
+    }
+
+    @GetMapping("/by-tag")
+    @Operation(summary = "查询酒列表", description = "通过标签查询酒列表，支持分页。如果不提供标签则返回所有酒")
+    @Parameter(name = "tag", description = "标签名称，可选参数", required = false)
+    @Parameter(name = "page", description = "页码，从0开始", required = false)
+    @Parameter(name = "size", description = "每页大小", required = false)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "成功获取酒列表"),
+        @ApiResponse(responseCode = "400", description = "请求参数错误")
+    })
+    public ResponseEntity<CommonResp<?>> getWinesByTag(
+            @RequestParam(required = false) String tag,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("id").ascending());
+        Page<Wine> wines = wineService.getWinesByTag(tag, pageRequest);
+        Page<WorkflowUserWineVo> wineVos = wines.map(wineMapper::toWineVo);
+        return ResponseEntity.ok(CommonResp.success(wineVos));
     }
 } 
