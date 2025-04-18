@@ -50,7 +50,7 @@ public class WineController {
         @ApiResponse(responseCode = "404", description = "未找到指定ID的酒")
     })
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CommonResp<?>> getWineById(@PathVariable Long id) {
+    public ResponseEntity<CommonResp<WorkflowUserWineVo>> getWineById(@PathVariable Long id) {
         Wine wineById = wineService.getWineById(id);
         if (wineById == null) {
             return ResponseEntity.notFound().build();
@@ -69,7 +69,7 @@ public class WineController {
         @ApiResponse(responseCode = "400", description = "请求参数错误")
     })
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CommonResp<?>> getWinesByTag(
+    public ResponseEntity<CommonResp<Page<WorkflowUserWineVo>>> getWinesByTag(
             @RequestParam(required = false) String tag,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -82,11 +82,11 @@ public class WineController {
     @GetMapping("/user-wine")
     @Operation(summary = "查询用户酒列表", description = "查询当前用户的所有酒")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CommonResp<?>> getUserWine(@RequestParam(defaultValue = "0") int page,
+    public ResponseEntity<CommonResp<Page<WorkflowUserWineVo>>> getUserWine(@RequestParam(defaultValue = "0") int page,
     @RequestParam(defaultValue = "10") int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("id").ascending());
         Page<UserWine> userWine = userWineService.getUserWine(pageRequest);
         Page<WorkflowUserWineVo> userWineVos = userWine.map(userWineMapper::toUserWineVo);
         return ResponseEntity.ok(CommonResp.success(userWineVos));
     }
-} 
+}

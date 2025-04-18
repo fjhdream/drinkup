@@ -12,14 +12,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import cool.drinkup.drinkup.external.sms.SmsSender;
 import cool.drinkup.drinkup.user.controller.req.LoginRequest;
 import cool.drinkup.drinkup.user.controller.req.PhoneNumberRequest;
 import cool.drinkup.drinkup.user.controller.resp.CommonResp;
+import cool.drinkup.drinkup.user.controller.resp.LogoutResp;
+import cool.drinkup.drinkup.user.controller.resp.UserLoginResp;
 import cool.drinkup.drinkup.user.mapper.UserMapper;
 import cool.drinkup.drinkup.user.model.User;
 import cool.drinkup.drinkup.user.service.UserService;
@@ -74,19 +74,19 @@ public class AuthController {
             @ApiResponse(responseCode = "404", description = "用户不存在")
     })
     @PostMapping("/login")
-    public ResponseEntity<CommonResp<?>> login(
+    public ResponseEntity<CommonResp<UserLoginResp>> login(
             @Parameter(description = "登录信息，包含手机号和验证码") @Valid @RequestBody LoginRequest loginRequest,
             HttpServletRequest request) {
         String phoneNumber = loginRequest.getPhone();
         String verificationCode = loginRequest.getVerificationCode();
 
         try {
-            //TODO: 暂时关闭短信验证码服务
+            // TODO: 暂时关闭短信验证码服务
             // 验证验证码
-            // if (!smsSender.verifySms(phoneNumber, verificationCode)) {
-            //     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            //             .body("验证码错误或已过期");
-            // }
+            if (!smsSender.verifySms(phoneNumber, verificationCode)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("验证码错误或已过期");
+            }
 
             // 查找用户
             User user = userService.findByPhone(phoneNumber).orElse(null);
@@ -119,11 +119,12 @@ public class AuthController {
             session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
                     SecurityContextHolder.getContext());
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "登录成功");
-            response.put("user", userMapper.toUserProfileResp(user));
+            UserLoginResp loginResp = UserLoginResp.builder()
+                    .message("登录成功")
+                    .user(userMapper.toUserProfileResp(user))
+                    .build();
 
-            return ResponseEntity.ok(CommonResp.success(response));
+            return ResponseEntity.ok(CommonResp.success(loginResp));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(CommonResp.error("登录失败: " + e.getMessage()));
@@ -135,17 +136,18 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "登出成功")
     })
     @PostMapping("/logout")
-    public ResponseEntity<CommonResp<?>> logout(HttpServletRequest request) {
+    public ResponseEntity<CommonResp<LogoutResp>> logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if ( session != null) {
             session.invalidate();
         }
         SecurityContextHolder.clearContext();
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Logged out successfully");
-        response.put("status", "success");
+        LogoutResp logoutResp = LogoutResp.builder()
+                .message("Logged out successfully")
+                .status("success")
+                .build();
 
-        return ResponseEntity.ok(CommonResp.success(response));
+        return ResponseEntity.ok(CommonResp.success(logoutResp));
     }
 }

@@ -18,6 +18,8 @@ import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserChatReq;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserReq;
 import cool.drinkup.drinkup.workflow.controller.resp.CommonResp;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowBartenderChatResp;
+import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserChatResp;
+import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWineResp;
 import cool.drinkup.drinkup.workflow.service.WorkflowService;
 import cool.drinkup.drinkup.workflow.service.rag.DataLoaderService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,7 +47,7 @@ public class WorkflowController {
     @ApiResponse(responseCode = "200", description = "Successfully processed cocktail request")
     @PostMapping("/cocktail")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CommonResp<?>> processCocktailRequest(
+    public ResponseEntity<CommonResp<WorkflowUserWineResp>> processCocktailRequest(
         @Parameter(description = "User input for cocktail workflow") 
         @RequestBody WorkflowUserReq userInput
     ) {
@@ -72,7 +74,7 @@ public class WorkflowController {
     @ApiResponse(responseCode = "200", description = "Successfully chatted with the bot")
     @PostMapping("/chat")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CommonResp<?>> chat(@RequestBody WorkflowUserChatReq userInput) {
+    public ResponseEntity<CommonResp<WorkflowUserChatResp>> chat(@RequestBody WorkflowUserChatReq userInput) {
         var resp = workflowService.chat(userInput);
         if (resp == null) {
             return ResponseEntity.ok(CommonResp.error("Error chatting with the bot"));
