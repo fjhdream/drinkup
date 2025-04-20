@@ -6,9 +6,11 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import cool.drinkup.drinkup.user.service.UserService;
 import cool.drinkup.drinkup.workflow.controller.req.BarCreateReq;
+import cool.drinkup.drinkup.workflow.controller.req.BarUpdateReq;
 import cool.drinkup.drinkup.workflow.mapper.BarMapper;
 import cool.drinkup.drinkup.workflow.model.Bar;
 import cool.drinkup.drinkup.workflow.repository.BarRepository;
@@ -43,5 +45,25 @@ public class BarService {
             return new ArrayList<>();
         }
         return barRepository.findAllById(barIds);
+    }
+    
+    @Transactional
+    public Bar updateBar(Long barId, BarUpdateReq barUpdateReq) {
+        return barRepository.findById(barId)
+                .map(existingBar -> {
+                    existingBar.setName(barUpdateReq.getName());
+                    return barRepository.save(existingBar);
+                })
+                .orElseThrow(() -> new RuntimeException("Bar not found with id: " + barId));
+    }
+    
+    @Transactional
+    public void deleteBar(Long barId) {
+        barRepository.deleteById(barId);
+    }
+    
+    @Transactional(readOnly = true)
+    public Optional<Bar> getBarById(Long barId) {
+        return barRepository.findById(barId);
     }
 }

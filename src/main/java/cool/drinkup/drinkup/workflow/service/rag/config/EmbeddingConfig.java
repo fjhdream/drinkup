@@ -1,28 +1,46 @@
 package cool.drinkup.drinkup.workflow.service.rag.config;
 
+import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.embedding.BatchingStrategy;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
+import org.springframework.ai.openai.OpenAiEmbeddingOptions;
+import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
+import lombok.Data;
+
 @Configuration
+@ConfigurationProperties(prefix = "drinkup.embedding")
+@Data
 public class EmbeddingConfig {
 
+    private Model openai = new Model();
+
+    @Data
+    public static class Model {
+        private String baseUrl;
+        private String apiKey;
+        private String model;
+    }
 
     @Bean
-    public BatchingStrategy customBatchingStrategy() {
+    BatchingStrategy customBatchingStrategy() {
         return new CustomBatchingStrategy();
     }
-    /**
-     * Configure the OpenAI embedding model as primary.
-     * This ensures that when multiple embedding beans are available,
-     * the OpenAI implementation will be used by default.
-     */
+    
     @Bean
     @Primary
-    EmbeddingModel embeddingModel(OpenAiEmbeddingModel openAiEmbeddingModel) {
-        return openAiEmbeddingModel;
+    EmbeddingModel customOpenAiEmbeddingModel() {
+        OpenAiApi openAiApi = OpenAiApi.builder().baseUrl(openai.getBaseUrl()).apiKey(openai.getApiKey()).build();
+        OpenAiEmbeddingOptions options = OpenAiEmbeddingOptions.builder()
+            .model(openai.model)
+            .build();
+        OpenAiEmbeddingModel model = new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED, options);
+        return model;
     }
+
 }

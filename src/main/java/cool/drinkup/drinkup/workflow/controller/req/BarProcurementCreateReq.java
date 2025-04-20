@@ -2,19 +2,18 @@ package cool.drinkup.drinkup.workflow.controller.req;
 
 import java.util.List;
 
-import cool.drinkup.drinkup.workflow.controller.req.BarStockCreateReq.InnerBarStockCreateReq;
 import lombok.Data;
 
 @Data
-public class BarStockCreateReq {
-    private List<InnerBarStockCreateReq> barStocks;
+public class BarProcurementCreateReq {
+
+    private List<InnerBarProcurementCreateReq> barProcurements;
 
     @Data
-    public static class InnerBarStockCreateReq {
+    public static class InnerBarProcurementCreateReq {
         private String name;
         private String type;
         private String iconType;
         private String description;
-    
-    } 
+    }
 }

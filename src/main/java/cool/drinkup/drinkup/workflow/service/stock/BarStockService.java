@@ -1,10 +1,12 @@
 package cool.drinkup.drinkup.workflow.service.stock;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import cool.drinkup.drinkup.workflow.controller.req.BarStockCreateReq;
+import cool.drinkup.drinkup.workflow.controller.req.BarStockUpdateReq;
 import cool.drinkup.drinkup.workflow.mapper.BatStockMapper;
 import cool.drinkup.drinkup.workflow.model.BarStock;
 import cool.drinkup.drinkup.workflow.repository.BarStockRepository;
@@ -25,5 +27,31 @@ public class BarStockService {
     public List<BarStock> createBarStock(Long barId, BarStockCreateReq barStockCreateReq) {
         List<BarStock> barStocks = batStockMapper.toBarStock(barStockCreateReq, barId);
         return barStockRepository.saveAll(barStocks);
+    }
+
+    @Transactional
+    public BarStock updateBarStock(Long barId, Long stockId, BarStockUpdateReq barStockUpdateReq) {
+        BarStock barStock = barStockRepository.findByIdAndBarId(stockId, barId)
+                .orElseThrow(() -> new RuntimeException("Bar stock not found"));
+        
+        // Update fields if provided in the request
+        if (barStockUpdateReq.getName() != null) {
+            barStock.setName(barStockUpdateReq.getName());
+        }
+        if (barStockUpdateReq.getType() != null) {
+            barStock.setType(barStockUpdateReq.getType());
+        }
+        if (barStockUpdateReq.getDescription() != null) {
+            barStock.setDescription(barStockUpdateReq.getDescription());
+        }
+        
+        return barStockRepository.save(barStock);
+    }
+
+    @Transactional
+    public void deleteBarStock(Long barId, Long stockId) {
+        BarStock barStock = barStockRepository.findByIdAndBarId(stockId, barId)
+                .orElseThrow(() -> new RuntimeException("Bar stock not found"));
+        barStockRepository.delete(barStock);
     }
 }

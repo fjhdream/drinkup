@@ -20,8 +20,10 @@ public interface BatStockMapper {
         barStockCreateReq.getBarStocks().forEach(item -> {
             BarStock barStock = new BarStock();
             barStock.setBarId(barId);
-            barStock.setName(item.name());
-            barStock.setType(item.type());
+            barStock.setName(item.getName());
+            barStock.setType(item.getType());
+            barStock.setIconType(item.getIconType());
+            barStock.setDescription(item.getDescription());
             barStocks.add(barStock);
         });
         

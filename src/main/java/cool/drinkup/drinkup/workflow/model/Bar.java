@@ -1,5 +1,7 @@
 package cool.drinkup.drinkup.workflow.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,11 +29,15 @@ public class Bar {
     @OneToMany(mappedBy = "barId", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BarStock> barStocks;
 
+    @OneToMany(mappedBy = "barId", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BarProcurement> barProcurements;
 
-    public String getDescription() {
+    @JsonIgnore
+    public String getBarDescription() {
         StringBuilder description = new StringBuilder();
         description.append("Bar Name: ").append(name).append("\n");
-        description.append("Bar Stocks: ").append(barStocks.stream().map(BarStock::getDescription).collect(Collectors.joining(", ")));
+        description.append("Bar Stocks: ")
+                .append(barStocks.stream().map(BarStock::getBarStockDescription).collect(Collectors.joining(", ")));
         return description.toString();
     }
 }

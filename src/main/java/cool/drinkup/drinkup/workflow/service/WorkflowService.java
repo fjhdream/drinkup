@@ -3,7 +3,6 @@ package cool.drinkup.drinkup.workflow.service;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -15,57 +14,48 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import cool.drinkup.drinkup.external.image.ImageGenerator;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowBartenderChatReq;
+import cool.drinkup.drinkup.workflow.controller.req.WorkflowStockRecognitionReq;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserChatReq;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserReq;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowBartenderChatResp;
+import cool.drinkup.drinkup.workflow.controller.resp.WorkflowStockRecognitionResp;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserChatResp;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWineResp;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWineVo;
 import cool.drinkup.drinkup.workflow.mapper.WineMapper;
 import cool.drinkup.drinkup.workflow.model.Bar;
+import cool.drinkup.drinkup.workflow.model.BarStock;
 import cool.drinkup.drinkup.workflow.model.Wine;
+import cool.drinkup.drinkup.workflow.repository.BarStockRepository;
 import cool.drinkup.drinkup.workflow.repository.WineRepository;
 import cool.drinkup.drinkup.workflow.service.bar.BarService;
 import cool.drinkup.drinkup.workflow.service.bartender.BartenderService;
 import cool.drinkup.drinkup.workflow.service.bartender.dto.BartenderParams;
 import cool.drinkup.drinkup.workflow.service.chat.ChatBotService;
 import cool.drinkup.drinkup.workflow.service.chat.dto.ChatParams;
+import cool.drinkup.drinkup.workflow.service.image.ImageRecognitionService;
+import cool.drinkup.drinkup.workflow.service.stock.BarStockService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class WorkflowService {
-
     private final VectorStore vectorStore;
-
     private final WineRepository wineRepository;
-
     private final WineMapper wineMapper;
-
     private final UserWineService userWineService;
-
     private final ChatBotService chatBotService;
-
     private final BartenderService bartenderService;
-
     private final BarService barService;
-
     private final ObjectMapper objectMapper;
-
-    public WorkflowService(VectorStore vectorStore, WineRepository wineRepository, WineMapper wineMapper,
-            UserWineService userWineService, ChatBotService chatBotService, BartenderService bartenderService, BarService barService,
-            @Qualifier("snakeCaseObjectMapper") ObjectMapper objectMapper) {
-        this.vectorStore = vectorStore;
-        this.wineRepository = wineRepository;
-        this.wineMapper = wineMapper;
-        this.userWineService = userWineService;
-        this.chatBotService = chatBotService;
-        this.bartenderService = bartenderService;
-        this.barService = barService;
-        this.objectMapper = objectMapper;
-    }
+    private final ImageGenerator imageGenerator;
+    private final ImageRecognitionService imageRecognitionService;
+    private final BarStockService barStockService;
 
     public WorkflowUserWineResp processCocktailRequest(WorkflowUserReq userInput) {
         String userInputText = userInput.getUserInput();
@@ -111,7 +101,7 @@ public class WorkflowService {
             return chatWithUser;
         }
         // Extract JSON content between ```json and ``` markers
-        String jsonPattern = "```json\\s*(.*?)\\s*```";
+        String jsonPattern = "```json\s*(.*?)\s*```";
         Pattern pattern = Pattern.compile(jsonPattern, Pattern.DOTALL);
         Matcher matcher = pattern.matcher(chatWithUser);
 
@@ -131,6 +121,10 @@ public class WorkflowService {
         try {
             var chatBotResponse = objectMapper.readValue(json, WorkflowBartenderChatResp.class);
             userWineService.saveUserWine(chatBotResponse);
+            // String imageUrl =
+            // imageGenerator.generateImage(chatBotResponse.getImagePrompt());
+            String imageUrl = "https://res.cloudinary.com/dzkwltgyd/image/upload/v1744774334/glif-run-outputs/uqiqt63gckqstxyxvopq.jpg";
+            chatBotResponse.setImage(imageUrl);
             return chatBotResponse;
         } catch (JsonProcessingException e) {
             log.error("Error parsing JSON: {}", e.getMessage());
@@ -160,7 +154,30 @@ public class WorkflowService {
             return "null";
         }
         return bars.stream()
-                .map(Bar::getDescription)
+                .map(Bar::getBarDescription)
                 .collect(Collectors.joining("\n"));
+    }
+
+    public WorkflowStockRecognitionResp recognizeStock(WorkflowStockRecognitionReq req) {
+        try {
+            // 使用图像识别服务识别库存
+            List<BarStock> recognizedStocks = imageRecognitionService.recognizeStockFromImage(req.getImage());
+
+            // 设置barId
+            recognizedStocks.forEach(stock -> stock.setBarId(req.getBarId()));
+
+            // // 保存识别的库存到数据库
+            // List<BarStock> savedStocks = barStockRepository.saveAll(recognizedStocks);
+
+            // 构建响应
+            WorkflowStockRecognitionResp resp = new WorkflowStockRecognitionResp();
+            resp.setBarId(req.getBarId());
+            resp.setRecognizedStocks(recognizedStocks);
+
+            return resp;
+        } catch (Exception e) {
+            log.error("Error recognizing stock from image", e);
+            return null;
+        }
     }
 }

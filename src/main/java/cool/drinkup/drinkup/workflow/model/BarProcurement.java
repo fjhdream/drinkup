@@ -1,7 +1,5 @@
 package cool.drinkup.drinkup.workflow.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -10,9 +8,9 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "bar_stock")
+@Table(name = "bar_procurement")
 @Data
-public class BarStock {
+public class BarProcurement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,9 +24,4 @@ public class BarStock {
     private String iconType;
 
     private String description;
-
-    @JsonIgnore
-    public String getBarStockDescription() {
-        return "[库存类型: " + type + ", 库存名称: " + name + ", 库存描述:" + description + "]";
-    }
-}
+} 

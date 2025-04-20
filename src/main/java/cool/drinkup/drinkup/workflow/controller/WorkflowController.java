@@ -5,19 +5,25 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowBartenderChatReq;
+import cool.drinkup.drinkup.workflow.controller.req.WorkflowStockRecognitionReq;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserChatReq;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserReq;
 import cool.drinkup.drinkup.workflow.controller.resp.CommonResp;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowBartenderChatResp;
+import cool.drinkup.drinkup.workflow.controller.resp.WorkflowStockRecognitionResp;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserChatResp;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWineResp;
 import cool.drinkup.drinkup.workflow.service.WorkflowService;
@@ -27,8 +33,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/workflow")
 @RequiredArgsConstructor
@@ -38,7 +46,6 @@ public class WorkflowController {
     private final DataLoaderService dataLoaderService;
     private final WorkflowService workflowService;
     private final ExecutorService virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
-    private static final Logger log = LoggerFactory.getLogger(WorkflowController.class);
 
     @Operation(
         summary = "处理调酒单请求",
@@ -107,4 +114,22 @@ public class WorkflowController {
         }
         return ResponseEntity.ok(CommonResp.success(resp));
     }
+
+    @Operation(summary = "库存识别", description = "通过图片识别库存")
+    @ApiResponse(responseCode = "200", description = "Successfully recognized stock from image")
+    @PostMapping(value = "/recognize-stock/{barId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<CommonResp<WorkflowStockRecognitionResp>> recognizeStock(
+            @Parameter(description = "Bar ID") @PathVariable("barId") Long barId,
+            @Parameter(description = "Image file for stock recognition") @RequestPart("image") MultipartFile image) {
+        WorkflowStockRecognitionReq req = new WorkflowStockRecognitionReq();
+        req.setBarId(barId);
+        req.setImage(image);
+        var resp = workflowService.recognizeStock(req);
+        if (resp == null) {
+            return ResponseEntity.ok(CommonResp.error("Error recognizing stock"));
+        }
+        return ResponseEntity.ok(CommonResp.success(resp));
+    }
+
 }
