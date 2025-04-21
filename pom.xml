@@ -296,6 +296,19 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<image>
+						<name>registry.fjhdream.lol/drinkup/drinkup:latest</name>
+						<builder>paketobuildpacks/builder:base</builder>
+						<env>
+							<BP_NATIVE_IMAGE>false</BP_NATIVE_IMAGE>
+							<BP_JVM_VERSION>21</BP_JVM_VERSION>
+						</env>
+						<buildpacks>
+							<buildpack>gcr.io/paketo-buildpacks/java</buildpack>
+						</buildpacks>
+						<createdDate>now</createdDate>
+						<publish>true</publish>
+					</image>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>
