@@ -26,6 +26,8 @@ public class Bar {
 
     private String name;
 
+    private String description;
+
     @OneToMany(mappedBy = "barId", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BarStock> barStocks;
 

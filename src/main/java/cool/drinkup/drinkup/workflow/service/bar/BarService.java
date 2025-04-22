@@ -51,7 +51,12 @@ public class BarService {
     public Bar updateBar(Long barId, BarUpdateReq barUpdateReq) {
         return barRepository.findById(barId)
                 .map(existingBar -> {
-                    existingBar.setName(barUpdateReq.getName());
+                    if (barUpdateReq.getName() != null) {
+                        existingBar.setName(barUpdateReq.getName());
+                    }
+                    if (barUpdateReq.getDescription() != null) {
+                        existingBar.setDescription(barUpdateReq.getDescription());
+                    }
                     return barRepository.save(existingBar);
                 })
                 .orElseThrow(() -> new RuntimeException("Bar not found with id: " + barId));
