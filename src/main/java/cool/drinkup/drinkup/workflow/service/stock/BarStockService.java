@@ -54,4 +54,9 @@ public class BarStockService {
                 .orElseThrow(() -> new RuntimeException("Bar stock not found"));
         barStockRepository.delete(barStock);
     }
+
+    @Transactional
+    public List<BarStock> saveAll(List<BarStock> barStocks) {
+        return barStockRepository.saveAll(barStocks);
+    }
 }

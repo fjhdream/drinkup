@@ -4,6 +4,8 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.Media;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -14,18 +16,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+
+import cool.drinkup.drinkup.workflow.controller.req.BarStockCreateReq;
 import cool.drinkup.drinkup.workflow.controller.req.BarStockCreateReq.InnerBarStockCreateReq;
 import cool.drinkup.drinkup.workflow.model.BarStock;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -60,14 +61,12 @@ public class ImageRecognitionService {
 
             List<Message> messages = new ArrayList<>();
             messages.add(new SystemMessage(promptTemplate));
-            messages.add(new UserMessage("Identify all alcoholic beverages and bar ingredients in this image. " +
-                    "Return the result as a JSON array with each item having 'name', 'type', 'iconType', and 'description' fields. "
-                    +
-                    "For type, use categories like 'spirit', 'liqueur', 'mixer', 'garnish', etc. " +
-                    "For iconType, use a simple descriptor like 'bottle', 'fruit', 'herb', etc.",
+            messages.add(new UserMessage("请识别图片中的所有物品，并返回物品的名称、类型和描述。",
                     new Media(MimeType.valueOf(image.getContentType()), image.getResource())));
             Prompt prompt = new Prompt(messages);
-            String response = chatModel.call(prompt).getResult().getOutput().getText();
+            ChatResponse call = chatModel.call(prompt);
+            Generation result = call.getResult();
+            String response = result.getOutput().getText();
             log.info("Image recognition response: {}", response);
             return parseRecognitionResponse(response);
         } catch (Exception e) {
@@ -81,8 +80,9 @@ public class ImageRecognitionService {
             // Extract JSON array from response if needed
             String jsonContent = extractJsonContent(response);
 
+            BarStockCreateReq barStockCreateReq = objectMapper.readValue(jsonContent, BarStockCreateReq.class);
             // Parse the JSON array into a list of InnerBarStockCreateReq objects
-            InnerBarStockCreateReq[] stockItems = objectMapper.readValue(jsonContent, InnerBarStockCreateReq[].class);
+            List<InnerBarStockCreateReq> stockItems = barStockCreateReq.getBarStocks();
 
             // Convert to BarStock objects
             List<BarStock> barStocks = new ArrayList<>();

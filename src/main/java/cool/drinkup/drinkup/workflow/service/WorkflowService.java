@@ -38,6 +38,7 @@ import cool.drinkup.drinkup.workflow.service.chat.ChatBotService;
 import cool.drinkup.drinkup.workflow.service.chat.dto.ChatParams;
 import cool.drinkup.drinkup.workflow.service.image.ImageRecognitionService;
 import cool.drinkup.drinkup.workflow.service.image.ImageService;
+import cool.drinkup.drinkup.workflow.service.stock.BarStockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -52,6 +53,7 @@ public class WorkflowService {
     private final UserWineService userWineService;
     private final ChatBotService chatBotService;
     private final BartenderService bartenderService;
+    private final BarStockService barStockService;
     private final BarService barService;
     private final ObjectMapper objectMapper;
     private final ImageRecognitionService imageRecognitionService;
@@ -172,13 +174,13 @@ public class WorkflowService {
             // 设置barId
             recognizedStocks.forEach(stock -> stock.setBarId(req.getBarId()));
 
-            // // 保存识别的库存到数据库
-            // List<BarStock> savedStocks = barStockRepository.saveAll(recognizedStocks);
+            // 保存识别的库存到数据库
+            List<BarStock> savedStocks = barStockService.saveAll(recognizedStocks);
 
             // 构建响应
             WorkflowStockRecognitionResp resp = new WorkflowStockRecognitionResp();
             resp.setBarId(req.getBarId());
-            resp.setRecognizedStocks(recognizedStocks);
+            resp.setRecognizedStocks(savedStocks);
 
             return resp;
         } catch (Exception e) {

@@ -1,12 +1,14 @@
 package cool.drinkup.drinkup.workflow.controller.req;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 import java.util.List;
 
-import cool.drinkup.drinkup.workflow.controller.req.BarStockCreateReq.InnerBarStockCreateReq;
 import lombok.Data;
 
 @Data
 public class BarStockCreateReq {
+    @JsonAlias({"bar_stocks", "user_stock"})
     private List<InnerBarStockCreateReq> barStocks;
 
     @Data
