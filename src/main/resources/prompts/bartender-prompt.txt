@@ -23,7 +23,7 @@
 
 ### 第二阶段：theme - 社交货币工坊（30%）
 theme:${theme}
-themeFormula:${theme_flormula}
+themeFormula:${themeFormula}
 
 ### 第三阶段：科学调配站（40%）
 - **配方逻辑**：优先使用用户库存的${userStock}，若用户库存中的材料符合目标配方的「基础酒类+2种核心风味物质」，必须优先使用。

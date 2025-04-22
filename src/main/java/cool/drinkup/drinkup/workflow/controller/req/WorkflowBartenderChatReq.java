@@ -8,8 +8,8 @@ import lombok.Data;
 @Data
 public class WorkflowBartenderChatReq {
     private List<WorkflowBartenderChatVo> messages;
+    @Pattern(regexp = "^(PHILOSOPHY|CYBER_WORK)$", message = "主题必须是有效的ThemeEnum值")
     private String theme;
-    private String themeFormula;
     private String userDemand;
     private List<Long> barIds;
 

@@ -31,6 +31,9 @@ import cool.drinkup.drinkup.workflow.repository.WineRepository;
 import cool.drinkup.drinkup.workflow.service.bar.BarService;
 import cool.drinkup.drinkup.workflow.service.bartender.BartenderService;
 import cool.drinkup.drinkup.workflow.service.bartender.dto.BartenderParams;
+import cool.drinkup.drinkup.workflow.service.bartender.theme.Theme;
+import cool.drinkup.drinkup.workflow.service.bartender.theme.ThemeEnum;
+import cool.drinkup.drinkup.workflow.service.bartender.theme.ThemeFactory;
 import cool.drinkup.drinkup.workflow.service.chat.ChatBotService;
 import cool.drinkup.drinkup.workflow.service.chat.dto.ChatParams;
 import cool.drinkup.drinkup.workflow.service.image.ImageRecognitionService;
@@ -53,6 +56,7 @@ public class WorkflowService {
     private final ObjectMapper objectMapper;
     private final ImageRecognitionService imageRecognitionService;
     private final ImageService imageService;
+    private final ThemeFactory themeFactory;
 
     public WorkflowUserWineResp processCocktailRequest(WorkflowUserReq userInput) {
         String userInputText = userInput.getUserInput();
@@ -135,11 +139,12 @@ public class WorkflowService {
     private BartenderParams buildBartenderParams(WorkflowBartenderChatReq bartenderInput) {
         List<Bar> userBars = barService.getUserBarByBarIds(bartenderInput.getBarIds());
         String userStock = buildBarDescription(userBars);
+        Theme theme = themeFactory.getTheme(ThemeEnum.fromValue(bartenderInput.getTheme()));
         return BartenderParams.builder()
                 .userStock(userStock)
                 .userDemand(bartenderInput.getUserDemand())
-                .theme(bartenderInput.getTheme())
-                .themeFormula(bartenderInput.getThemeFormula())
+                .theme(theme.getName())
+                .themeFormula(theme.getFormula())
                 .build();
     }
 
