@@ -86,9 +86,6 @@ public class WorkflowService {
         var json = extractJson(chatWithUser);
         try {
             var chatBotResponse = objectMapper.readValue(json, WorkflowUserChatResp.class);
-            if (userInput.getImageId() != null) {
-                imageService.deleteImage(userInput.getImageId());
-            }
             return chatBotResponse;
         } catch (JsonProcessingException e) {
             log.error("Error parsing JSON: {}", e.getMessage());
@@ -127,6 +124,7 @@ public class WorkflowService {
         try {
             var chatBotResponse = objectMapper.readValue(json, WorkflowBartenderChatResp.class);
             userWineService.saveUserWine(chatBotResponse);
+            //TODO: 对接真正的生图API
             // String imageUrl =
             // imageGenerator.generateImage(chatBotResponse.getImagePrompt());
             String imageUrl = "https://res.cloudinary.com/dzkwltgyd/image/upload/v1744774334/glif-run-outputs/uqiqt63gckqstxyxvopq.jpg";

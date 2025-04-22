@@ -19,7 +19,6 @@ import org.springframework.util.MimeType;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -29,6 +28,7 @@ import java.util.stream.Collectors;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserChatReq.WorkflowUserChatVo;
 import cool.drinkup.drinkup.workflow.service.chat.dto.ChatParams;
 import cool.drinkup.drinkup.workflow.service.image.ImageService;
+import cool.drinkup.drinkup.workflow.util.ContentTypeUtil;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 
@@ -39,15 +39,18 @@ public class ChatBotService {
     private final ChatModel chatModel;
     private final String promptTemplate;
     private final ImageService imageService;
+    private final ContentTypeUtil contentTypeUtil;
 
     @Value("${drinkup.chat.model}")
     private String model;
 
-    public ChatBotService(@Qualifier("openAiChatModel") ChatModel chatModel, ResourceLoader resourceLoader, ImageService imageService) throws IOException {
+    public ChatBotService(@Qualifier("openAiChatModel") ChatModel chatModel, ResourceLoader resourceLoader, 
+    ImageService imageService, ContentTypeUtil contentTypeUtil) throws IOException {
         this.chatModel = chatModel;
         Resource promptResource = resourceLoader.getResource("classpath:prompts/chat-prompt.txt");
         this.promptTemplate = new String(promptResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         this.imageService = imageService;
+        this.contentTypeUtil = contentTypeUtil;
     }
 
     public String chat(List<WorkflowUserChatVo> messages, ChatParams params) {
@@ -128,7 +131,7 @@ public class ChatBotService {
         if (params.getImageId() != null) {
             Resource resource = imageService.loadImage(params.getImageId());
             try {
-                String mime = Files.probeContentType(resource.getFile().toPath());
+                String mime = contentTypeUtil.detectMimeType(resource);
                 Media media = new Media(MimeType.valueOf(mime), resource);
                 allMessages.add(new UserMessage("This is the image of the user's stock: ", media));
             } catch (IOException e) {

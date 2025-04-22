@@ -1,40 +1,35 @@
 package cool.drinkup.drinkup.workflow.service.image;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ImageService {
 
-    @Value("${app.image-storage.path:./uploaded-images}")
-    private String storagePath;
-    
-    private Path rootLocation;
+    private final S3Client s3Client;
 
-    public void init() {
-        try {
-            rootLocation = Paths.get(storagePath);
-            Files.createDirectories(rootLocation);
-            log.info("Storage initialized at: {}", rootLocation.toAbsolutePath());
-        } catch (IOException e) {
-            log.error("Could not initialize storage location", e);
-            throw new RuntimeException("Could not initialize storage location", e);
-        }
-    }
+    private final String bucket = "object-bucket";
+
+    private String prefix = "images/";
 
     public String storeImage(MultipartFile file) {
         try {
@@ -54,15 +49,19 @@ public class ImageService {
             
             // Create the final filename with ID
             String filename = imageId + extension;
+            String key = prefix + filename;
             
-            // Create the target path
-            Path targetPath = rootLocation.resolve(filename);
+            // Upload the file to S3
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .contentType(file.getContentType())
+                    .build();
             
-            // Copy the file to the target path, replacing if it exists
-            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
             
-            log.info("Stored image with ID: {} at path: {}", imageId, targetPath);
-            return imageId;
+            log.info("Stored image with ID: {} in S3 bucket: {} with key: {}", imageId, bucket, key);
+            return filename;
         } catch (IOException e) {
             log.error("Failed to store image", e);
             throw new RuntimeException("Failed to store image: " + e.getMessage(), e);
@@ -71,24 +70,36 @@ public class ImageService {
 
     public Resource loadImage(String imageId) {
         try {
-            // Find the file with the given imageId
-            File directory = rootLocation.toFile();
-            File[] files = directory.listFiles((dir, name) -> name.startsWith(imageId));
+            // Find file with the matching prefix in S3
+            String keyPrefix = prefix + imageId;
             
-            if (files == null || files.length == 0) {
+            // Since we don't know the extension, we need to check if the object exists
+            try {
+                HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(keyPrefix)
+                        .build();
+                s3Client.headObject(headObjectRequest);
+            } catch (NoSuchKeyException e) {
+                // Object doesn't exist with the exact name, we need to try with extensions
+                // For simplicity, we'll just log an error and throw an exception
                 log.error("Image not found with ID: {}", imageId);
                 throw new RuntimeException("Image not found with ID: " + imageId);
             }
             
-            Path filePath = files[0].toPath();
-            Resource resource = new UrlResource(filePath.toUri());
+            // Get the object from S3
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(keyPrefix)
+                    .build();
             
-            if (resource.exists() && resource.isReadable()) {
-                return resource;
-            } else {
-                log.error("Could not read image with ID: {}", imageId);
-                throw new RuntimeException("Could not read image with ID: " + imageId);
-            }
+            ResponseInputStream<GetObjectResponse> s3Object = s3Client.getObject(getObjectRequest);
+            byte[] content = s3Object.readAllBytes();
+            
+            Resource resource = new ByteArrayResource(content);
+            
+            log.info("Successfully loaded image with ID: {}", imageId);
+            return resource;
         } catch (IOException e) {
             log.error("Could not load image", e);
             throw new RuntimeException("Could not load image", e);
@@ -103,34 +114,21 @@ public class ImageService {
      */
     public boolean deleteImage(String imageId) {
         try {
-            // Find the file with the given imageId
-            File directory = rootLocation.toFile();
-            File[] files = directory.listFiles((dir, name) -> name.startsWith(imageId));
+            // Find the file with the given imageId in S3
+            String keyPrefix = prefix + imageId;
             
-            if (files == null || files.length == 0) {
-                log.warn("Image not found with ID: {}", imageId);
-                return false;
-            }
+            // Try to delete the object
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(keyPrefix)
+                    .build();
             
-            boolean allDeleted = true;
-            for (File file : files) {
-                boolean deleted = file.delete();
-                if (!deleted) {
-                    log.error("Failed to delete image file: {}", file.getAbsolutePath());
-                    allDeleted = false;
-                }
-            }
-            
-            if (allDeleted) {
-                log.info("Successfully deleted image with ID: {}", imageId);
-                return true;
-            } else {
-                log.error("Failed to delete some files for image with ID: {}", imageId);
-                return false;
-            }
+            s3Client.deleteObject(deleteObjectRequest);
+            log.info("Successfully deleted image with ID: {}", imageId);
+            return true;
         } catch (Exception e) {
             log.error("Error deleting image with ID: {}", imageId, e);
             return false;
         }
     }
-} 
+}
