@@ -28,7 +28,11 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+
+		<!-- 构镜用到的属性 -->
 		<spring-ai.version>1.0.0-M6</spring-ai.version>
+		<spring-boot.build-image.image.name>registry.fjhdream.lol/drinkup:latest</spring-boot.build-image.image.name>
+		<spring-boot.build-image.image.publish>false</spring-boot.build-image.image.publish>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -297,8 +301,8 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
 					<image>
-						<name>registry.fjhdream.lol/drinkup/drinkup:latest</name>
-						<builder>paketobuildpacks/builder:base</builder>
+						<name>${spring-boot.build-image.image.name}</name>
+						<builder>paketobuildpacks/builder-jammy-java-tiny</builder>
 						<env>
 							<BP_NATIVE_IMAGE>false</BP_NATIVE_IMAGE>
 							<BP_JVM_VERSION>21</BP_JVM_VERSION>
@@ -307,14 +311,31 @@
 							<buildpack>gcr.io/paketo-buildpacks/java</buildpack>
 						</buildpacks>
 						<createdDate>now</createdDate>
-						<publish>true</publish>
+						<buildCache>
+							<bind>
+								<source>${project.basedir}/.cnb-cache/build</source>
+							</bind>
+						</buildCache>
+						<launchCache>
+							<bind>
+								<source>${project.basedir}/.cnb-cache/launch</source>
+							</bind>
+						</launchCache>
+						<publish>${spring-boot.build-image.image.publish}</publish>
 					</image>
 					<excludes>
+						<exclude>
+							<groupId>org.springframework.boot</groupId>
+							<artifactId>spring-boot-devtools</artifactId>
+						</exclude>
 						<exclude>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+					<layers>
+						<enabled>true</enabled>
+					</layers>
 				</configuration>
 			</plugin>
 		</plugins>

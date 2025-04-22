@@ -3,14 +3,11 @@ package cool.drinkup.drinkup.external.sms.impl;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import com.aliyun.dysmsapi20170525.Client;
-import com.aliyun.dysmsapi20170525.models.SendSmsRequest;
-import com.aliyun.dysmsapi20170525.models.SendSmsResponse;
 import com.aliyun.teaopenapi.models.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import cool.drinkup.drinkup.external.sms.SmsSender;
 import cool.drinkup.drinkup.external.sms.config.AliyunSmsProperties;
@@ -44,74 +41,75 @@ public class AliyunSmsSender implements SmsSender {
     public void sendSms(String phoneNumber, String message) {
         // 验证手机号格式
         validatePhoneNumber(phoneNumber);
-        
-        // 幂等性检查
-        String idempotencyKey = SMS_IDEMPOTENCY_KEY_PREFIX + phoneNumber + ":" + message;
-        if (isDuplicateMessage(idempotencyKey)) {
-            log.warn("Duplicate SMS message detected for phone number: {}", phoneNumber);
-            return;
-        }
+        return;
+        // TODO: 实现阿里云短信发送
+        // // 幂等性检查
+        // String idempotencyKey = SMS_IDEMPOTENCY_KEY_PREFIX + phoneNumber + ":" + message;
+        // if (isDuplicateMessage(idempotencyKey)) {
+        //     log.warn("Duplicate SMS message detected for phone number: {}", phoneNumber);
+        //     return;
+        // }
 
-        int retryCount = 0;
-        Exception lastException = null;
+        // int retryCount = 0;
+        // Exception lastException = null;
 
-        while (retryCount < properties.getMaxRetries()) {
-            try {
-                // 构建请求参数
-                SendSmsRequest sendSmsRequest = new SendSmsRequest()
-                    .setPhoneNumbers(phoneNumber)
-                    .setSignName(properties.getSignName())
-                    .setTemplateCode(properties.getTemplateCode());
+        // while (retryCount < properties.getMaxRetries()) {
+        //     try {
+        //         // 构建请求参数
+        //         SendSmsRequest sendSmsRequest = new SendSmsRequest()
+        //             .setPhoneNumbers(phoneNumber)
+        //             .setSignName(properties.getSignName())
+        //             .setTemplateCode(properties.getTemplateCode());
 
-                // 支持灵活的模板参数
-                Map<String, String> templateParams;
-                if (message.startsWith("{") && message.endsWith("}")) {
-                    // 如果message已经是JSON格式，直接使用
-                    templateParams = objectMapper.readValue(message, Map.class);
-                } else {
-                    // 否则，使用默认的code参数
-                    templateParams = Map.of("code", message);
-                }
-                sendSmsRequest.setTemplateParam(objectMapper.writeValueAsString(templateParams));
+        //         // 支持灵活的模板参数
+        //         Map<String, String> templateParams;
+        //         if (message.startsWith("{") && message.endsWith("}")) {
+        //             // 如果message已经是JSON格式，直接使用
+        //             templateParams = objectMapper.readValue(message, Map.class);
+        //         } else {
+        //             // 否则，使用默认的code参数
+        //             templateParams = Map.of("code", message);
+        //         }
+        //         sendSmsRequest.setTemplateParam(objectMapper.writeValueAsString(templateParams));
 
-                // 发送请求
-                SendSmsResponse response = getClient().sendSms(sendSmsRequest);
-                String code = response.getBody().getCode();
-                String bizId = response.getBody().getBizId();
+        //         // 发送请求
+        //         SendSmsResponse response = getClient().sendSms(sendSmsRequest);
+        //         String code = response.getBody().getCode();
+        //         String bizId = response.getBody().getBizId();
 
-                log.info("SMS response: {}", response.getBody());
+        //         log.info("SMS response: {}", response.getBody());
 
-                if ("OK".equals(code)) {
-                    // 发送成功，记录幂等性信息到Redis，设置过期时间
-                    redisTemplate.opsForValue().set(idempotencyKey, String.valueOf(System.currentTimeMillis()), 
-                            properties.getVerificationCodeExpireMinutes(), TimeUnit.MINUTES);
-                    log.info("SMS sent successfully to {}, BizId: {}", phoneNumber, bizId);
-                    return;
-                } else {
-                    // 处理特定错误码
-                    handleErrorCode(code, Map.of(
-                        "Code", code,
-                        "Message", response.getBody().getMessage()
-                    ));
-                    lastException = new RuntimeException("Failed to send SMS: " + response.getBody().getMessage());
-                }
-            } catch (Exception e) {
-                lastException = e;
-                log.warn("Attempt {} failed to send SMS to {}: {}", retryCount + 1, phoneNumber, e.getMessage());
-            }
+        //         if ("OK".equals(code)) {
+        //             // 发送成功，记录幂等性信息到Redis，设置过期时间
+        //             redisTemplate.opsForValue().set(idempotencyKey, String.valueOf(System.currentTimeMillis()), 
+        //                     properties.getVerificationCodeExpireMinutes(), TimeUnit.MINUTES);
+        //             log.info("SMS sent successfully to {}, BizId: {}", phoneNumber, bizId);
+        //             return;
+        //         } else {
+        //             // 处理特定错误码
+        //             handleErrorCode(code, Map.of(
+        //                 "Code", code,
+        //                 "Message", response.getBody().getMessage()
+        //             ));
+        //             lastException = new RuntimeException("Failed to send SMS: " + response.getBody().getMessage());
+        //         }
+        //     } catch (Exception e) {
+        //         lastException = e;
+        //         log.warn("Attempt {} failed to send SMS to {}: {}", retryCount + 1, phoneNumber, e.getMessage());
+        //     }
 
-            retryCount++;
-            if (retryCount < properties.getMaxRetries()) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-        }
+        //     retryCount++;
+        //     if (retryCount < properties.getMaxRetries()) {
+        //         try {
+        //             Thread.sleep(1000);
+        //         } catch (InterruptedException ie) {
+        //             Thread.currentThread().interrupt();
+        //         }
+        //     }
+        // }
 
-        log.error("Failed to send SMS to {} after {} attempts", phoneNumber, properties.getMaxRetries(), lastException);
-        throw new RuntimeException("Failed to send SMS after " + properties.getMaxRetries() + " attempts", lastException);
+        // log.error("Failed to send SMS to {} after {} attempts", phoneNumber, properties.getMaxRetries(), lastException);
+        // throw new RuntimeException("Failed to send SMS after " + properties.getMaxRetries() + " attempts", lastException);
     }
 
     private void validatePhoneNumber(String phoneNumber) {

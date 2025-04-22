@@ -83,10 +83,10 @@ public class AuthController {
         try {
             // TODO: 暂时关闭短信验证码服务
             // 验证验证码
-            if (!smsSender.verifySms(phoneNumber, verificationCode)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("验证码错误或已过期");
-            }
+            // if (!smsSender.verifySms(phoneNumber, verificationCode)) {
+            //     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            //             .body("验证码错误或已过期");
+            // }
 
             // 查找用户
             User user = userService.findByPhone(phoneNumber).orElse(null);

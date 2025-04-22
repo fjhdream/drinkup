@@ -25,7 +25,7 @@ public class DataLoaderService {
     private ObjectMapper objectMapper = new ObjectMapper();
 
     public void loadData() {
-        List<Wine> wines = wineRepository.findAllById(List.of(1L, 2L, 3L));
+        List<Wine> wines = wineRepository.findAll();
         for (Wine wine : wines) {
             String jsonString;
             try {

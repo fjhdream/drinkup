@@ -1,0 +1,108 @@
+name: Build and Publish Multi‑Arch Image
+
+on:
+  push:
+    branches: [ "dev" ]
+    tags:     [ "v*" ]
+  pull_request:
+    branches: [ "dev" ]
+
+jobs:
+  build:
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        # 维持你原来的两个架构后缀
+        platform: [ linux/amd64, linux/arm64 ]
+        include:
+          - platform: linux/amd64
+            suffix: amd64          # ← 和你旧 workflow 一致
+          - platform: linux/arm64
+            suffix: arm64
+
+    env:
+      # 供 pom.xml 使用；不影响仓库路径
+      docker.platform: ${{ matrix.platform }}
+
+    steps:
+      # ───────── 1. 检出代码 ─────────
+      - uses: actions/checkout@v4
+
+      # ───────── 2. 配置 JDK21 + Maven（带 ~/.m2 缓存） ─────────
+      - name: Set up JDK 21 & Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.6
+
+      # ───────── 3. 缓存 CNB 层 ─────────
+      - name: Cache CNB layers
+        uses: actions/cache@v4
+        with:
+          path: .cnb-cache
+          key: cnb-${{ hashFiles('pom.xml') }}
+
+      # ───────── 4. 启用 QEMU & Buildx ─────────
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      # ───────── 5. 登录你的镜像仓库 ─────────
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # ───────── 6. 构建并推送单架构镜像 ─────────
+      - name: Show Image Name
+        run: |
+          echo "Image name: ${{ env.DOCKER_IMAGE_REPO }}/drinkup:${{ matrix.suffix }}"
+        env:
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+
+      - name: Build & Push (${{ matrix.platform }})
+        env:
+          # 修改仓库前缀，移除末尾的 /drinkup
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+        run: |
+          mvn -B -ntp spring-boot:build-image -DskipTests \
+            -Dspring-boot.build-image.image.name=${DOCKER_IMAGE_REPO}/drinkup:${{ matrix.suffix }} \
+            -Dspring-boot.build-image.image.publish=false
+      - name: Push Image (${{ matrix.platform }})
+        env:
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+        run: |
+          docker push ${DOCKER_IMAGE_REPO}/drinkup:${{ matrix.suffix }}
+
+      - name: Fix CNB cache permissions
+        if: always()
+        run: |
+          sudo chown -R $(id -u):$(id -g) .cnb-cache
+
+  manifest:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # ───────── 7. 生成并推送多架构 manifest ─────────
+      - name: Create & Push Multi‑Arch Manifest
+        env:
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+        run: |
+          docker buildx imagetools create \
+            --tag ${DOCKER_IMAGE_REPO}/drinkup:latest \
+            ${DOCKER_IMAGE_REPO}/drinkup:amd64 \
+            ${DOCKER_IMAGE_REPO}/drinkup:arm64
