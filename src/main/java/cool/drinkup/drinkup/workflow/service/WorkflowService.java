@@ -14,7 +14,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import cool.drinkup.drinkup.external.image.ImageGenerator;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowBartenderChatReq;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowStockRecognitionReq;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserChatReq;
@@ -28,7 +27,6 @@ import cool.drinkup.drinkup.workflow.mapper.WineMapper;
 import cool.drinkup.drinkup.workflow.model.Bar;
 import cool.drinkup.drinkup.workflow.model.BarStock;
 import cool.drinkup.drinkup.workflow.model.Wine;
-import cool.drinkup.drinkup.workflow.repository.BarStockRepository;
 import cool.drinkup.drinkup.workflow.repository.WineRepository;
 import cool.drinkup.drinkup.workflow.service.bar.BarService;
 import cool.drinkup.drinkup.workflow.service.bartender.BartenderService;
@@ -36,7 +34,7 @@ import cool.drinkup.drinkup.workflow.service.bartender.dto.BartenderParams;
 import cool.drinkup.drinkup.workflow.service.chat.ChatBotService;
 import cool.drinkup.drinkup.workflow.service.chat.dto.ChatParams;
 import cool.drinkup.drinkup.workflow.service.image.ImageRecognitionService;
-import cool.drinkup.drinkup.workflow.service.stock.BarStockService;
+import cool.drinkup.drinkup.workflow.service.image.ImageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -53,9 +51,8 @@ public class WorkflowService {
     private final BartenderService bartenderService;
     private final BarService barService;
     private final ObjectMapper objectMapper;
-    private final ImageGenerator imageGenerator;
     private final ImageRecognitionService imageRecognitionService;
-    private final BarStockService barStockService;
+    private final ImageService imageService;
 
     public WorkflowUserWineResp processCocktailRequest(WorkflowUserReq userInput) {
         String userInputText = userInput.getUserInput();
@@ -78,11 +75,14 @@ public class WorkflowService {
 
     public WorkflowUserChatResp chat(WorkflowUserChatReq userInput) {
         List<Bar> bars = barService.getUserBarByBarIds(userInput.getBarIds());
-        ChatParams chatParams = buildChatParams(bars);
+        ChatParams chatParams = buildChatParams(bars, userInput.getImageId());
         var chatWithUser = chatBotService.chat(userInput.getMessages(), chatParams);
         var json = extractJson(chatWithUser);
         try {
             var chatBotResponse = objectMapper.readValue(json, WorkflowUserChatResp.class);
+            if (userInput.getImageId() != null) {
+                imageService.deleteImage(userInput.getImageId());
+            }
             return chatBotResponse;
         } catch (JsonProcessingException e) {
             log.error("Error parsing JSON: {}", e.getMessage());
@@ -92,7 +92,7 @@ public class WorkflowService {
 
     public Flux<String> chatStreamFlux(WorkflowUserChatReq userInput) {
         List<Bar> bars = barService.getUserBarByBarIds(userInput.getBarIds());
-        ChatParams chatParams = buildChatParams(bars);
+        ChatParams chatParams = buildChatParams(bars, userInput.getImageId());
         return chatBotService.chatStreamFlux(userInput.getMessages(), chatParams);
     }
 
@@ -143,9 +143,10 @@ public class WorkflowService {
                 .build();
     }
 
-    private ChatParams buildChatParams(List<Bar> bars) {
+    private ChatParams buildChatParams(List<Bar> bars, String imageId) {
         ChatParams chatParams = new ChatParams();
         chatParams.setUserStock(buildBarDescription(bars));
+        chatParams.setImageId(imageId);
         return chatParams;
     }
 

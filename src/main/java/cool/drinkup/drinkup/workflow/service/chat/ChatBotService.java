@@ -7,6 +7,7 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.model.Media;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.ResponseFormat;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -14,9 +15,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MimeType;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserChatReq.WorkflowUserChatVo;
 import cool.drinkup.drinkup.workflow.service.chat.dto.ChatParams;
+import cool.drinkup.drinkup.workflow.service.image.ImageService;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 
@@ -34,14 +38,16 @@ public class ChatBotService {
 
     private final ChatModel chatModel;
     private final String promptTemplate;
+    private final ImageService imageService;
 
     @Value("${drinkup.chat.model}")
     private String model;
 
-    public ChatBotService(@Qualifier("openAiChatModel") ChatModel chatModel, ResourceLoader resourceLoader) throws IOException {
+    public ChatBotService(@Qualifier("openAiChatModel") ChatModel chatModel, ResourceLoader resourceLoader, ImageService imageService) throws IOException {
         this.chatModel = chatModel;
         Resource promptResource = resourceLoader.getResource("classpath:prompts/chat-prompt.txt");
         this.promptTemplate = new String(promptResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        this.imageService = imageService;
     }
 
     public String chat(List<WorkflowUserChatVo> messages, ChatParams params) {
@@ -119,6 +125,16 @@ public class ChatBotService {
         var allMessages = new ArrayList<Message>();
         allMessages.add(systemMessage);
         allMessages.addAll(historyMessages);
+        if (params.getImageId() != null) {
+            Resource resource = imageService.loadImage(params.getImageId());
+            try {
+                String mime = Files.probeContentType(resource.getFile().toPath());
+                Media media = new Media(MimeType.valueOf(mime), resource);
+                allMessages.add(new UserMessage("This is the image of the user's stock: ", media));
+            } catch (IOException e) {
+                log.error("Error loading image: {}", e.getMessage());
+            }
+        }
 
         return new Prompt(allMessages, OpenAiChatOptions.builder()
                     .model(this.model)

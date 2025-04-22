@@ -11,4 +11,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChatParams {
     private String userStock;
+    private String imageId;
 }

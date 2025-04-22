@@ -2,6 +2,8 @@ package cool.drinkup.drinkup.workflow.controller.resp;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 
+import java.util.List;
+
 import lombok.Data;
 
 @Data
@@ -17,5 +19,14 @@ public class WorkflowUserChatResp {
         private String userDemand;
         @JsonAlias("ready_to_serve")
         private boolean readyToServe;
+        @JsonAlias("image_user_stock")
+        private List<UserStock> imageUserStock;
+        @Data
+        public static class UserStock {
+            private String name;
+            private String type;
+            private String iconType;
+            private String description;
+        }
     }
 }
