@@ -1,23 +1,22 @@
 package cool.drinkup.drinkup.workflow.service.image;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.UUID;
 
+import cool.drinkup.drinkup.external.image.ImageCompressor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Slf4j
@@ -26,10 +25,14 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 public class ImageService {
 
     private final S3Client s3Client;
+    private final ImageCompressor imageCompressor;
 
+    private final RestClient restClient = RestClient.create();
     private final String bucket = "object-bucket";
-
     private String prefix = "images/";
+
+    @Value("${drinkup.image.save.s3.url:https://img.fjhdream.lol/}")
+    private String imageUrl;
 
     public String storeImage(MultipartFile file) {
         try {
@@ -69,66 +72,21 @@ public class ImageService {
     }
 
     public Resource loadImage(String imageId) {
+        String imageUrl = this.imageUrl + prefix + imageId;
+        String compressedImageUrl = imageCompressor.compress(imageUrl);
         try {
-            // Find file with the matching prefix in S3
-            String keyPrefix = prefix + imageId;
-            
-            // Since we don't know the extension, we need to check if the object exists
-            try {
-                HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
-                        .bucket(bucket)
-                        .key(keyPrefix)
-                        .build();
-                s3Client.headObject(headObjectRequest);
-            } catch (NoSuchKeyException e) {
-                // Object doesn't exist with the exact name, we need to try with extensions
-                // For simplicity, we'll just log an error and throw an exception
-                log.error("Image not found with ID: {}", imageId);
-                throw new RuntimeException("Image not found with ID: " + imageId);
+            byte[] imageBytes = restClient.get()
+                    .uri(URI.create(compressedImageUrl))
+                    .retrieve()
+                    .body(byte[].class);
+            if (imageBytes == null || imageBytes.length == 0) {
+                throw new RuntimeException("Failed to load image: Empty response");
             }
-            
-            // Get the object from S3
-            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(keyPrefix)
-                    .build();
-            
-            ResponseInputStream<GetObjectResponse> s3Object = s3Client.getObject(getObjectRequest);
-            byte[] content = s3Object.readAllBytes();
-            
-            Resource resource = new ByteArrayResource(content);
-            
-            log.info("Successfully loaded image with ID: {}", imageId);
-            return resource;
-        } catch (IOException e) {
-            log.error("Could not load image", e);
-            throw new RuntimeException("Could not load image", e);
-        }
-    }
-
-    /**
-     * Deletes an image by its ID
-     * 
-     * @param imageId the ID of the image to delete
-     * @return true if the image was successfully deleted, false otherwise
-     */
-    public boolean deleteImage(String imageId) {
-        try {
-            // Find the file with the given imageId in S3
-            String keyPrefix = prefix + imageId;
-            
-            // Try to delete the object
-            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(keyPrefix)
-                    .build();
-            
-            s3Client.deleteObject(deleteObjectRequest);
-            log.info("Successfully deleted image with ID: {}", imageId);
-            return true;
-        } catch (Exception e) {
-            log.error("Error deleting image with ID: {}", imageId, e);
-            return false;
+            log.info("Successfully loaded image: {}", imageId);
+            return new ByteArrayResource(imageBytes);
+        } catch (RestClientException e) {
+            log.error("Failed to load image: {}", imageId, e);
+            throw new RuntimeException("Failed to load image: " + e.getMessage(), e);
         }
     }
 }

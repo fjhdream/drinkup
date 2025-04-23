@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import cool.drinkup.drinkup.external.image.ImageGenerator;
-import cool.drinkup.drinkup.external.image.config.GlifProperties;
+import cool.drinkup.drinkup.external.image.config.properties.GlifProperties;
 import cool.drinkup.drinkup.external.image.impl.dto.GlifImageRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

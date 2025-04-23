@@ -14,7 +14,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,6 +26,7 @@ import java.util.List;
 import cool.drinkup.drinkup.workflow.controller.req.BarStockCreateReq;
 import cool.drinkup.drinkup.workflow.controller.req.BarStockCreateReq.InnerBarStockCreateReq;
 import cool.drinkup.drinkup.workflow.model.BarStock;
+import cool.drinkup.drinkup.workflow.util.ContentTypeUtil;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -35,15 +35,19 @@ public class ImageRecognitionService {
     @Qualifier("openAiChatModel")
     private final ChatModel chatModel;
     private final ObjectMapper objectMapper;
+    private final ImageService imageService;
+    private final ContentTypeUtil contentTypeUtil;
     private String promptTemplate;
 
     @Value("${drinkup.image.recognition.model:google/gemini-2.0-flash-001}")
     private String model;
 
     public ImageRecognitionService(ResourceLoader resourceLoader, @Qualifier("openAiChatModel") ChatModel chatModel,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper, ImageService imageService, ContentTypeUtil contentTypeUtil) {
         this.chatModel = chatModel;
         this.objectMapper = objectMapper;
+        this.imageService = imageService;
+        this.contentTypeUtil = contentTypeUtil;
         try {
             Resource promptResource = resourceLoader.getResource("classpath:prompts/image-recognition-prompt.txt");
             this.promptTemplate = new String(promptResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
@@ -56,13 +60,15 @@ public class ImageRecognitionService {
         }
     }
 
-    public List<BarStock> recognizeStockFromImage(MultipartFile image) {
+    public List<BarStock> recognizeStockFromImage(String imageId) {
         try {
 
             List<Message> messages = new ArrayList<>();
             messages.add(new SystemMessage(promptTemplate));
+            Resource image = imageService.loadImage(imageId);
+            String mimeType = contentTypeUtil.detectMimeType(image).toString();
             messages.add(new UserMessage("请识别图片中的所有物品，并返回物品的名称、类型和描述。",
-                    new Media(MimeType.valueOf(image.getContentType()), image.getResource())));
+                    new Media(MimeType.valueOf(mimeType), image)));
             Prompt prompt = new Prompt(messages);
             ChatResponse call = chatModel.call(prompt);
             Generation result = call.getResult();
@@ -81,8 +87,10 @@ public class ImageRecognitionService {
             String jsonContent = extractJsonContent(response);
 
             BarStockCreateReq barStockCreateReq = objectMapper.readValue(jsonContent, BarStockCreateReq.class);
+
             // Parse the JSON array into a list of InnerBarStockCreateReq objects
-            List<InnerBarStockCreateReq> stockItems = barStockCreateReq.getBarStocks();
+            List<InnerBarStockCreateReq> stockItems = barStockCreateReq.getBarStocks() == null ? new ArrayList<>()
+                    : barStockCreateReq.getBarStocks();
 
             // Convert to BarStock objects
             List<BarStock> barStocks = new ArrayList<>();

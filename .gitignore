@@ -39,6 +39,6 @@ build/
 .env
 docs/data/
 src/main/resources/application-dev.yaml
-docs/
-logs/
-config/
+/docs/
+/logs/
+/config/

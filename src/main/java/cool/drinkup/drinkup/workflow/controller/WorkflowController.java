@@ -1,7 +1,5 @@
 package cool.drinkup.drinkup.workflow.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -9,10 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -117,14 +112,12 @@ public class WorkflowController {
 
     @Operation(summary = "库存识别", description = "通过图片识别库存")
     @ApiResponse(responseCode = "200", description = "Successfully recognized stock from image")
-    @PostMapping(value = "/recognize-stock/{barId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/recognize-stock/{barId}", consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommonResp<WorkflowStockRecognitionResp>> recognizeStock(
             @Parameter(description = "Bar ID") @PathVariable("barId") Long barId,
-            @Parameter(description = "Image file for stock recognition") @RequestPart("image") MultipartFile image) {
-        WorkflowStockRecognitionReq req = new WorkflowStockRecognitionReq();
+            @Parameter(description = "Image file for stock recognition") @RequestBody WorkflowStockRecognitionReq req) {
         req.setBarId(barId);
-        req.setImage(image);
         var resp = workflowService.recognizeStock(req);
         if (resp == null) {
             return ResponseEntity.ok(CommonResp.error("Error recognizing stock"));

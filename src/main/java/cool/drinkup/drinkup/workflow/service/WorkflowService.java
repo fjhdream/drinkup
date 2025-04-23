@@ -167,7 +167,7 @@ public class WorkflowService {
     public WorkflowStockRecognitionResp recognizeStock(WorkflowStockRecognitionReq req) {
         try {
             // 使用图像识别服务识别库存
-            List<BarStock> recognizedStocks = imageRecognitionService.recognizeStockFromImage(req.getImage());
+            List<BarStock> recognizedStocks = imageRecognitionService.recognizeStockFromImage(req.getImageId());
 
             // 设置barId
             recognizedStocks.forEach(stock -> stock.setBarId(req.getBarId()));

@@ -6,10 +6,11 @@ import org.springframework.context.annotation.Configuration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import cool.drinkup.drinkup.external.image.ImageGenerator;
+import cool.drinkup.drinkup.external.image.config.properties.GlifProperties;
 import cool.drinkup.drinkup.external.image.impl.GlifImageGenerator;
 
 @Configuration
-public class GlifConfig {
+public class ImageGeneratorConfig {
 
     @Bean
     public ImageGenerator glifImageGenerator(GlifProperties properties, ObjectMapper objectMapper) {
