@@ -5,6 +5,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 import java.util.Optional;
 
+import cool.drinkup.drinkup.user.controller.req.UpdateProfileRequest;
 import cool.drinkup.drinkup.user.controller.resp.CommonResp;
 import cool.drinkup.drinkup.user.controller.resp.UserProfileResp;
 import cool.drinkup.drinkup.user.mapper.UserMapper;
@@ -24,6 +26,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,6 +53,39 @@ public class UserController {
         log.info("获取个人资料: {}", username);
         return userService.findByUsername(username)
                 .map(user -> {
+                    UserProfileResp userProfileResp = userMapper.toUserProfileResp(user);
+                    return ResponseEntity.ok(CommonResp.success(userProfileResp));
+                })
+                .orElse(ResponseEntity.ok(CommonResp.error("用户不存在")));
+    }
+
+    @Operation(summary = "更新个人资料", description = "更新当前登录用户的个人资料信息")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "更新成功"),
+        @ApiResponse(responseCode = "400", description = "请求参数错误"),
+        @ApiResponse(responseCode = "404", description = "用户不存在")
+    })
+    @PatchMapping("/profile")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<CommonResp<UserProfileResp>> updateProfile(
+            @Parameter(description = "个人资料更新请求") 
+            @Valid @RequestBody UpdateProfileRequest request) {
+        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        log.info("更新个人资料: {}", username);
+        
+        return userService.findByUsername(username)
+                .map(user -> {
+                    // 更新昵称
+                    if (request.getNickname() != null && !request.getNickname().trim().isEmpty()) {
+                        user.setNickname(request.getNickname());
+                        log.info("更新昵称: {}", request.getNickname());
+                    }
+                    
+                    // 未来可以在这里添加其他字段的更新逻辑
+                    
+                    userService.save(user);
                     UserProfileResp userProfileResp = userMapper.toUserProfileResp(user);
                     return ResponseEntity.ok(CommonResp.success(userProfileResp));
                 })
