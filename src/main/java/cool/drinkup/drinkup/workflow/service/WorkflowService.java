@@ -5,6 +5,7 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -151,7 +152,7 @@ public class WorkflowService {
     private ChatParams buildChatParams(List<Bar> bars, String imageId) {
         ChatParams chatParams = new ChatParams();
         chatParams.setUserStock(buildBarDescription(bars));
-        chatParams.setImageId(imageId);
+        chatParams.setImageId(StringUtils.hasText(imageId) ? imageId : null);
         return chatParams;
     }
 
