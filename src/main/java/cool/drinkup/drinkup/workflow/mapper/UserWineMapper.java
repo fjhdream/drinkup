@@ -5,6 +5,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -17,12 +18,16 @@ import cool.drinkup.drinkup.workflow.controller.resp.WorkflowBartenderChatResp;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWineVo;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWineVo.Ingredient;
 import cool.drinkup.drinkup.workflow.model.UserWine;
+import cool.drinkup.drinkup.workflow.service.image.ImageService;
 
 @Mapper(componentModel = "spring")
-public interface UserWineMapper {
+public abstract class UserWineMapper {
 
-    Logger log = LoggerFactory.getLogger(UserWineMapper.class);
-    ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    protected static final Logger log = LoggerFactory.getLogger(UserWineMapper.class);
+    protected ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    
+    @Autowired
+    protected ImageService imageService;
 
     @Mapping(target = "id", ignore = true)
     @Mapping(source = "chatBotResponse.ingredients", target = "ingredients", qualifiedByName = "IngredientListToJsonString")
@@ -30,10 +35,10 @@ public interface UserWineMapper {
     @Mapping(source = "chatBotResponse.tagFlavor", target = "tagFlavor", qualifiedByName = "JsonStringListToString")
     @Mapping(source = "chatBotResponse.tagsOthers", target = "tagsOthers", qualifiedByName = "JsonStringListToString")
     @Mapping(source = "userId", target = "userId")
-    UserWine toUserWine(WorkflowBartenderChatResp chatBotResponse, Long userId);
+    public abstract UserWine toUserWine(WorkflowBartenderChatResp chatBotResponse, Long userId);
 
     @Named("JsonStringListToString")
-    default String jsonToStringList(List<String> json) {
+    protected String jsonToStringList(List<String> json) {
         if (json == null || json.isEmpty()) {
             return null;
         }
@@ -46,7 +51,7 @@ public interface UserWineMapper {
     }
 
     @Named("IngredientListToJsonString")
-    default String ingredientListToJsonString(List<WorkflowUserWineVo.Ingredient> ingredients) {
+    protected String ingredientListToJsonString(List<WorkflowUserWineVo.Ingredient> ingredients) {
         if (ingredients == null || ingredients.isEmpty()) {
             return null;
         }
@@ -58,14 +63,20 @@ public interface UserWineMapper {
         }
     }
 
+    @Named("imageToUrl")
+    protected String imageToUrl(String imageId) {
+        return imageService.getImageUrl(imageId);
+    }
+
     @Mapping(source = "ingredients", target = "ingredients", qualifiedByName = "jsonToIngredientsList")
     @Mapping(source = "tagBaseSpirit", target = "tagBaseSpirit", qualifiedByName = "jsonToStringList")
     @Mapping(source = "tagFlavor", target = "tagFlavor", qualifiedByName = "jsonToStringList")
     @Mapping(source = "tagsOthers", target = "tagsOthers", qualifiedByName = "jsonToStringList")
-    WorkflowUserWineVo toUserWineVo(UserWine userWine);
+    @Mapping(source = "image", target = "image", qualifiedByName = "imageToUrl")
+    public abstract WorkflowUserWineVo toUserWineVo(UserWine userWine);
 
     @Named("jsonToIngredientsList")
-    default List<Ingredient> jsonToIngredientsList(String json) {
+    protected List<Ingredient> jsonToIngredientsList(String json) {
         if (json == null || json.isEmpty()) {
             return Collections.emptyList();
         }
@@ -77,7 +88,7 @@ public interface UserWineMapper {
     }
 
     @Named("jsonToStringList")
-    default List<String> jsonToStringList(String json) {
+    protected List<String> jsonToStringList(String json) {
         if (json == null || json.isEmpty()) {
             return Collections.emptyList();
         }

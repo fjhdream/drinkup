@@ -19,6 +19,7 @@ public class Wine {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
+    private String nameEn;
     private String description;
     private String baseIngredient;
     @Column(columnDefinition = "json")
@@ -50,4 +51,5 @@ public class Wine {
     @Column(columnDefinition = "json")
     @JdbcTypeCode(SqlTypes.JSON)
     private String tagsOthers;
+    private String image;
 }

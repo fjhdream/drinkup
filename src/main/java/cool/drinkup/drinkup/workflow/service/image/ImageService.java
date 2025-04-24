@@ -29,7 +29,7 @@ public class ImageService {
 
     private final RestClient restClient = RestClient.create();
     private final String bucket = "object-bucket";
-    private String prefix = "images/";
+    private static String prefix = "images/";
 
     @Value("${drinkup.image.save.s3.url:https://img.fjhdream.lol/}")
     private String imageUrl;
@@ -71,8 +71,62 @@ public class ImageService {
         }
     }
 
+    public String storeImage(String imageUrl) {
+        byte[] imageBytes = restClient.get()
+                    .uri(URI.create(imageUrl))
+                    .retrieve()
+                    .body(byte[].class);
+        if (imageBytes == null || imageBytes.length == 0) {
+            throw new RuntimeException("Failed to load image: Empty response");
+        }
+        
+        // Extract extension from original URL
+        String extension = ".jpg"; // Default extension
+        if (imageUrl.contains(".")) {
+            String urlPath = URI.create(imageUrl).getPath();
+            int lastDotIndex = urlPath.lastIndexOf(".");
+            if (lastDotIndex > 0) {
+                extension = urlPath.substring(lastDotIndex);
+            }
+        }
+        
+        String imageId = UUID.randomUUID().toString();
+        String filename = imageId + extension;
+        String key = prefix + filename;
+        
+        try {
+            // Upload the file to S3
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .contentType(getContentTypeFromExtension(extension))
+                    .build();
+            
+            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(
+                    new java.io.ByteArrayInputStream(imageBytes), imageBytes.length));
+            
+            log.info("Stored image with ID: {} in S3 bucket: {} with key: {}", imageId, bucket, key);
+            return filename;
+        } catch (Exception e) {
+            log.error("Failed to store image from URL: {}", imageUrl, e);
+            throw new RuntimeException("Failed to store image: " + e.getMessage(), e);
+        }
+    }
+    
+    private String getContentTypeFromExtension(String extension) {
+        return switch (extension.toLowerCase()) {
+            case ".jpg", ".jpeg" -> "image/jpeg";
+            case ".png" -> "image/png";
+            case ".gif" -> "image/gif";
+            case ".webp" -> "image/webp";
+            case ".svg" -> "image/svg+xml";
+            case ".bmp" -> "image/bmp";
+            default -> "image/jpeg";
+        };
+    }
+
     public Resource loadImage(String imageId) {
-        String imageUrl = this.imageUrl + prefix + imageId;
+        String imageUrl = getImageUrl(imageId);
         String compressedImageUrl = imageCompressor.compress(imageUrl);
         try {
             byte[] imageBytes = restClient.get()
@@ -88,5 +142,9 @@ public class ImageService {
             log.error("Failed to load image: {}", imageId, e);
             throw new RuntimeException("Failed to load image: " + e.getMessage(), e);
         }
+    }
+
+    public String getImageUrl(String imageId) {
+        return imageUrl + prefix + imageId;
     }
 }

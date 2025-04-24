@@ -10,5 +10,7 @@ import cool.drinkup.drinkup.workflow.model.Bar;
 public interface BarMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "barStocks", ignore = true)
+    @Mapping(target = "barProcurements", ignore = true)
     Bar toBar(BarCreateReq barCreateReq);
 }

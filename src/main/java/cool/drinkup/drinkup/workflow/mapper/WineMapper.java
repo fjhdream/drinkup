@@ -3,6 +3,7 @@ package cool.drinkup.drinkup.workflow.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -14,20 +15,25 @@ import java.util.List;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWineVo;
 import cool.drinkup.drinkup.workflow.controller.resp.WorkflowUserWineVo.Ingredient;
 import cool.drinkup.drinkup.workflow.model.Wine;
+import cool.drinkup.drinkup.workflow.service.image.ImageService;
 
 @Mapper(componentModel = "spring")
-public interface WineMapper {
+public abstract class WineMapper {
     
-    ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    protected ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    
+    @Autowired
+    protected ImageService imageService;
 
     @Mapping(source = "ingredients", target = "ingredients", qualifiedByName = "jsonToIngredientsList")
     @Mapping(source = "tagBaseSpirit", target = "tagBaseSpirit", qualifiedByName = "jsonToStringList")
     @Mapping(source = "tagFlavor", target = "tagFlavor", qualifiedByName = "jsonToStringList")
     @Mapping(source = "tagsOthers", target = "tagsOthers", qualifiedByName = "jsonToStringList")
-    WorkflowUserWineVo toWineVo(Wine wine);
+    @Mapping(source = "image", target = "image", qualifiedByName = "imageToUrl")
+    public abstract WorkflowUserWineVo toWineVo(Wine wine);
 
     @Named("jsonToIngredientsList")
-    default List<Ingredient> jsonToIngredientsList(String json) {
+    protected List<Ingredient> jsonToIngredientsList(String json) {
         if (json == null || json.isEmpty()) {
             return Collections.emptyList();
         }
@@ -39,7 +45,7 @@ public interface WineMapper {
     }
 
     @Named("jsonToStringList")
-    default List<String> jsonToStringList(String json) {
+    protected List<String> jsonToStringList(String json) {
         if (json == null || json.isEmpty()) {
             return Collections.emptyList();
         }
@@ -48,5 +54,10 @@ public interface WineMapper {
         } catch (JsonProcessingException e) {
             return Collections.emptyList();
         }
+    }
+
+    @Named("imageToUrl")
+    protected String imageToUrl(String imageId) {
+        return imageService.getImageUrl(imageId);
     }
 }

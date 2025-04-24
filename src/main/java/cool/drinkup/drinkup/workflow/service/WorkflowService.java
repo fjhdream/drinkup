@@ -124,12 +124,12 @@ public class WorkflowService {
         var json = extractJson(chatWithBartender);
         try {
             var chatBotResponse = objectMapper.readValue(json, WorkflowBartenderChatResp.class);
-            userWineService.saveUserWine(chatBotResponse);
             //TODO: 对接真正的生图API
-            // String imageUrl =
-            // imageGenerator.generateImage(chatBotResponse.getImagePrompt());
+            // String imageUrl = imageGenerator.generateImage(chatBotResponse.getImagePrompt());
             String imageUrl = "https://res.cloudinary.com/dzkwltgyd/image/upload/v1744774334/glif-run-outputs/uqiqt63gckqstxyxvopq.jpg";
-            chatBotResponse.setImage(imageUrl);
+            String imageId = imageService.storeImage(imageUrl);
+            userWineService.saveUserWine(chatBotResponse);
+            chatBotResponse.setImage(imageService.getImageUrl(imageId));
             return chatBotResponse;
         } catch (JsonProcessingException e) {
             log.error("Error parsing JSON: {}", e.getMessage());

@@ -21,6 +21,7 @@ public class UserWine {
     @Column(name = "user_id")
     private Long userId;
     private String name;
+    private String nameEn;
     private String description;
     private String baseIngredient;
     @Column(columnDefinition = "json")
@@ -52,4 +53,5 @@ public class UserWine {
     @Column(columnDefinition = "json")
     @JdbcTypeCode(SqlTypes.JSON)
     private String tagsOthers;
+    private String image;
 } 
