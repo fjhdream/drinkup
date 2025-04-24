@@ -18,6 +18,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.time.Duration;
 
+import cool.drinkup.drinkup.config.Interceptors.TraceIdInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -30,9 +31,16 @@ import lombok.extern.slf4j.Slf4j;
 @EnableRedisHttpSession
 public class SessionConfig extends AbstractHttpSessionApplicationInitializer implements WebMvcConfigurer {
 
+    private final TraceIdInterceptor traceIdInterceptor;
+
+    public SessionConfig(TraceIdInterceptor traceIdInterceptor) {
+        this.traceIdInterceptor = traceIdInterceptor;
+    }
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new SessionTimeoutRefreshInterceptor());
+        registry.addInterceptor(traceIdInterceptor);
     }
 
     public static class SessionTimeoutRefreshInterceptor implements HandlerInterceptor {
