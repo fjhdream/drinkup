@@ -84,7 +84,7 @@ public class WineController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommonResp<Page<WorkflowUserWineVo>>> getUserWine(@RequestParam(defaultValue = "0") int page,
     @RequestParam(defaultValue = "10") int size) {
-        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("id").ascending());
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("id").descending());
         Page<UserWine> userWine = userWineService.getUserWine(pageRequest);
         Page<WorkflowUserWineVo> userWineVos = userWine.map(userWineMapper::toUserWineVo);
         return ResponseEntity.ok(CommonResp.success(userWineVos));

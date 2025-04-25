@@ -1,7 +1,12 @@
 package cool.drinkup.drinkup.workflow.model;
 
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
+
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -54,4 +59,10 @@ public class UserWine {
     @JdbcTypeCode(SqlTypes.JSON)
     private String tagsOthers;
     private String image;
+    @CreationTimestamp
+    @Column(name = "create_date", updatable = false, columnDefinition = "DATETIME")
+    private ZonedDateTime createDate = ZonedDateTime.now(ZoneOffset.UTC);
+    @UpdateTimestamp
+    @Column(name = "update_date", columnDefinition = "DATETIME")
+    private ZonedDateTime updateDate = ZonedDateTime.now(ZoneOffset.UTC);
 } 

@@ -11,6 +11,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 
@@ -73,6 +76,8 @@ public abstract class UserWineMapper {
     @Mapping(source = "tagFlavor", target = "tagFlavor", qualifiedByName = "jsonToStringList")
     @Mapping(source = "tagsOthers", target = "tagsOthers", qualifiedByName = "jsonToStringList")
     @Mapping(source = "image", target = "image", qualifiedByName = "imageToUrl")
+    @Mapping(source = "createDate", target = "createDate", qualifiedByName = "dateToString")
+    @Mapping(source = "updateDate", target = "updateDate", qualifiedByName = "dateToString")
     public abstract WorkflowUserWineVo toUserWineVo(UserWine userWine);
 
     @Named("jsonToIngredientsList")
@@ -97,5 +102,15 @@ public abstract class UserWineMapper {
         } catch (JsonProcessingException e) {
             return Collections.emptyList();
         }
+    }
+
+    @Named("dateToString")
+    protected String dateToString(ZonedDateTime date) {
+        if (date == null) {
+            return null;
+        }
+        // Convert UTC time to UTC+8 (Asia/Shanghai timezone)
+        ZonedDateTime shanghaiTime = date.withZoneSameInstant(ZoneId.of("Asia/Shanghai"));
+        return shanghaiTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
 }

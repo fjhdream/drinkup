@@ -32,7 +32,7 @@ public class WorkflowUserWineVo {
     private String alcoholContent;
     private String calories;
     private String invented;
-    @JsonAlias("theme_feature_tag")
+    @JsonAlias("tag_main_base_spirit")
     private String tagMainBaseSpirit;
     @JsonAlias("tag_base_spirit")
     private List<String> tagBaseSpirit;
@@ -51,6 +51,10 @@ public class WorkflowUserWineVo {
     @JsonAlias("tags_others")
     private List<String> tagsOthers;
     private String image;
+    @JsonAlias("create_date")
+    private String createDate;
+    @JsonAlias("update_date")
+    private String updateDate;
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)

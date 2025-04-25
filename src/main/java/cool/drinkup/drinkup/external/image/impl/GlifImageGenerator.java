@@ -32,17 +32,17 @@ public class GlifImageGenerator implements ImageGenerator {
                     .body(glifImageRequest)
                     .retrieve()
                     .body(String.class);
-
+            log.info("Glif API response: {}", response);
             JsonNode jsonNode = objectMapper.readTree(response);
             if (jsonNode.has("error") && !jsonNode.get("error").isNull()) {
                 throw new RuntimeException("Glif API error: " + jsonNode.get("error").asText());
             }
             return jsonNode.get("output").asText();
         } catch (RestClientException e) {
-            log.error("Failed to generate image with Glif API", e);
+            log.error("Failed to generate image with Glif API, error: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to generate image: " + e.getMessage());
         } catch (Exception e) {
-            log.error("Failed to parse Glif API response", e);
+            log.error("Failed to parse Glif API response, error: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to parse API response: " + e.getMessage());
         }
     }
