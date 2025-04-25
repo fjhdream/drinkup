@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
@@ -145,6 +146,9 @@ public class ImageService {
     }
 
     public String getImageUrl(String imageId) {
+        if (!StringUtils.hasText(imageId)) {
+            return null;
+        }
         return imageUrl + prefix + imageId;
     }
 }

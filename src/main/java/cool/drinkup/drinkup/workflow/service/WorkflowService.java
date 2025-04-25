@@ -15,6 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import cool.drinkup.drinkup.external.image.ImageGenerator;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowBartenderChatReq;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowStockRecognitionReq;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserChatReq;
@@ -60,6 +61,7 @@ public class WorkflowService {
     private final ImageRecognitionService imageRecognitionService;
     private final ImageService imageService;
     private final ThemeFactory themeFactory;
+    private final ImageGenerator imageGenerator;
 
     public WorkflowUserWineResp processCocktailRequest(WorkflowUserReq userInput) {
         String userInputText = userInput.getUserInput();
@@ -124,9 +126,7 @@ public class WorkflowService {
         var json = extractJson(chatWithBartender);
         try {
             var chatBotResponse = objectMapper.readValue(json, WorkflowBartenderChatResp.class);
-            //TODO: 对接真正的生图API
-            // String imageUrl = imageGenerator.generateImage(chatBotResponse.getImagePrompt());
-            String imageUrl = "https://res.cloudinary.com/dzkwltgyd/image/upload/v1744774334/glif-run-outputs/uqiqt63gckqstxyxvopq.jpg";
+            String imageUrl = imageGenerator.generateImage(chatBotResponse.getImagePrompt());
             String imageId = imageService.storeImage(imageUrl);
             userWineService.saveUserWine(chatBotResponse);
             chatBotResponse.setImage(imageService.getImageUrl(imageId));
