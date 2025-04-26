@@ -28,7 +28,7 @@ public class ImageService {
     private final S3Client s3Client;
     private final ImageCompressor imageCompressor;
 
-    private final RestClient restClient = RestClient.create();
+    private final RestClient restClient = RestClient.builder().build();
     private final String bucket = "object-bucket";
     private static String prefix = "images/";
 

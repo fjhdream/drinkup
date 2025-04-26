@@ -41,6 +41,9 @@ import cool.drinkup.drinkup.workflow.service.chat.dto.ChatParams;
 import cool.drinkup.drinkup.workflow.service.image.ImageRecognitionService;
 import cool.drinkup.drinkup.workflow.service.image.ImageService;
 import cool.drinkup.drinkup.workflow.service.stock.BarStockService;
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.observation.annotation.Observed;
+import io.micrometer.tracing.annotation.NewSpan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -82,6 +85,9 @@ public class WorkflowService {
         return workflowUserWIneResp;
     }
 
+    @Observed(name = "workflow.chat")
+    @Timed(value = "workflow.chat", longTask = true)
+    @NewSpan
     public WorkflowUserChatResp chat(WorkflowUserChatReq userInput) {
         List<Bar> bars = barService.getUserBarByBarIds(userInput.getBarIds());
         ChatParams chatParams = buildChatParams(bars, userInput.getImageId());
@@ -120,6 +126,9 @@ public class WorkflowService {
         return chatWithUser;
     }
 
+    @Observed(name = "workflow.mixDrink")
+    @Timed(value = "workflow.mixDrink", longTask = true)
+    @NewSpan
     public WorkflowBartenderChatResp mixDrink(WorkflowBartenderChatReq bartenderInput) {
         var bartenderParam = buildBartenderParams(bartenderInput);
         var chatWithBartender = bartenderService.generateDrink(bartenderInput.getMessages(), bartenderParam);

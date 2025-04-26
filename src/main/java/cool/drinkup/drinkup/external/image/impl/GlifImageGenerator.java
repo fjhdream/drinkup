@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class GlifImageGenerator implements ImageGenerator {
-    private final RestClient restClient = RestClient.create();
+    private final RestClient restClient = RestClient.builder().build();
     private final GlifProperties properties;
     private final ObjectMapper objectMapper;
 

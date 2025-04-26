@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import cool.drinkup.drinkup.workflow.controller.req.WorkflowBartenderChatReq.WorkflowBartenderChatVo;
 import cool.drinkup.drinkup.workflow.service.bar.BarService;
 import cool.drinkup.drinkup.workflow.service.bartender.dto.BartenderParams;
+import io.micrometer.tracing.annotation.NewSpan;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -46,6 +47,7 @@ public class BartenderService {
         this.barService = barService;
     }
 
+    @NewSpan
     public String generateDrink(List<WorkflowBartenderChatVo> messages, BartenderParams bartenderParams) {
         var prompt = buildPrompt(messages, bartenderParams);
         var response = chatModel.call(prompt);

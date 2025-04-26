@@ -29,6 +29,7 @@ import cool.drinkup.drinkup.workflow.controller.req.WorkflowUserChatReq.Workflow
 import cool.drinkup.drinkup.workflow.service.chat.dto.ChatParams;
 import cool.drinkup.drinkup.workflow.service.image.ImageService;
 import cool.drinkup.drinkup.workflow.util.ContentTypeUtil;
+import io.micrometer.tracing.annotation.NewSpan;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 
@@ -53,6 +54,7 @@ public class ChatBotService {
         this.contentTypeUtil = contentTypeUtil;
     }
 
+    @NewSpan
     public String chat(List<WorkflowUserChatVo> messages, ChatParams params) {
         var prompt = buildPrompt(messages, params);
         var response = chatModel.call(prompt);
