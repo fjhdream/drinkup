@@ -42,14 +42,20 @@ public class SecurityConfig {
                             response.getWriter().write("{\"message\":\"Logged out successfully\",\"status\":\"success\"}");
                         })
                         .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID")
+                        .deleteCookies("JSESSIONID", "SESSION")
                         .permitAll()
                 )
                 .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .maximumSessions(1)
+                        .expiredUrl("/api/auth/login")
                         .and()
                         .sessionFixation().migrateSession()
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        .enableSessionUrlRewriting(false)
+                )
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin())
+                        .xssProtection(xss -> xss.disable())
                 )
                 .build();
     }
