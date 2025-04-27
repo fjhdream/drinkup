@@ -71,7 +71,7 @@ jobs:
           # 修改仓库前缀，移除末尾的 /drinkup
           DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
         run: |
-          mvn -B -ntp spring-boot:build-image -DskipTests \
+          mvn -B -ntp spring-boot:build-image \
             -Dspring-boot.build-image.image.name=${DOCKER_IMAGE_REPO}/drinkup:${{ matrix.suffix }} \
             -Dspring-boot.build-image.image.publish=false
       - name: Push Image (${{ matrix.platform }})
