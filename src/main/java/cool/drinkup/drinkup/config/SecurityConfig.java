@@ -15,6 +15,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.session.web.http.CookieSerializer;
+import org.springframework.session.web.http.DefaultCookieSerializer;
 
 import cool.drinkup.drinkup.user.internal.service.DrinkupUserDetailsService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -75,7 +77,16 @@ public class SecurityConfig {
         return authenticationManagerBuilder.build();
     }
 
-   
+    @Bean
+    public CookieSerializer cookieSerializer() {
+        DefaultCookieSerializer serializer = new DefaultCookieSerializer();
+        serializer.setCookieName("SESSION");
+        serializer.setCookieMaxAge(86400); // 24小时
+        serializer.setUseHttpOnlyCookie(false); // 允许客户端JavaScript访问
+        serializer.setCookiePath("/");
+        return serializer;
+    }
+
 
     @Bean
     public HttpSessionEventPublisher httpSessionEventPublisher() {
