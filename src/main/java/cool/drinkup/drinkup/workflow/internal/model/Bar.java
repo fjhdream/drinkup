@@ -1,6 +1,7 @@
 package cool.drinkup.drinkup.workflow.internal.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,9 +32,11 @@ public class Bar {
 
     private String description;
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "bar", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BarStock> barStocks;
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "bar", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BarProcurement> barProcurements;
 

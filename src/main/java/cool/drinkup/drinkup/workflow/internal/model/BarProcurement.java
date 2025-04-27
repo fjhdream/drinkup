@@ -1,5 +1,7 @@
 package cool.drinkup.drinkup.workflow.internal.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -21,6 +23,7 @@ public class BarProcurement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "bar_id")
     private Bar bar;

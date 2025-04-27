@@ -1,5 +1,6 @@
 package cool.drinkup.drinkup.workflow.internal.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;
@@ -22,6 +23,8 @@ public class BarStock {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
+    @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "bar_id") // 注意
     private Bar bar;
