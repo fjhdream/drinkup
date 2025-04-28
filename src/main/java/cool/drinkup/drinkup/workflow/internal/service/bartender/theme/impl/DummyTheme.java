@@ -15,9 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class PhilosophyTheme implements Theme {
+public class DummyTheme implements Theme {
 
-    private final String name = "philosophy";
+    private final String name = "dummy";
 
     private final ResourceLoader resourceLoader;
 
@@ -25,13 +25,7 @@ public class PhilosophyTheme implements Theme {
 
     @PostConstruct
     public void init() {
-        Resource themeResource = resourceLoader.getResource("classpath:themes/" + this.name + ".txt");
-        Resource themeFormulaResource = resourceLoader.getResource("classpath:themes/" + this.name + "_formula.txt");
-        try {
-            this.theme = new String(themeResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            log.error("Read theme failed!", e);
-        }
+        this.theme = "随意发挥你的创意来进行对用户的请求来进行发挥, 尽可能匹配用户的输入文本的情绪";
     }
     
     @Override

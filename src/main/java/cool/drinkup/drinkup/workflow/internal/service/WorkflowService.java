@@ -145,7 +145,6 @@ public class WorkflowService {
                 .userStock(userStock)
                 .userDemand(bartenderInput.getUserDemand())
                 .theme(theme.getName())
-                .themeFormula(theme.getFormula())
                 .build();
     }
 

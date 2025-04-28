@@ -17,7 +17,6 @@ public class BartenderParams {
     private String userStock;
     private String userDemand;
     private String theme;
-    private String themeFormula;
 
     public Map<String, String> toSubstituterMap() {
         Map<String, String> result = new HashMap<>();

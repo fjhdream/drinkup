@@ -15,9 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class PhilosophyTheme implements Theme {
+public class MovieTheme implements Theme {
 
-    private final String name = "philosophy";
+    private final String name = "movie";
 
     private final ResourceLoader resourceLoader;
 

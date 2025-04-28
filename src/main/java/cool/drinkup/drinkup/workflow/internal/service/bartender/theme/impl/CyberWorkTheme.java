@@ -23,15 +23,12 @@ public class CyberWorkTheme implements Theme {
 
     private String theme;
 
-    private String themeFormula;
-
     @PostConstruct
     public void init() {
         Resource themeResource = resourceLoader.getResource("classpath:themes/" + this.name + ".txt");
         Resource themeFormulaResource = resourceLoader.getResource("classpath:themes/" + this.name + "_formula.txt");
         try {
             this.theme = new String(themeResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            this.themeFormula = new String(themeFormulaResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             log.error("Read theme failed!", e);
         }
@@ -42,9 +39,4 @@ public class CyberWorkTheme implements Theme {
         return this.theme;
     }
 
-    @Override
-    public String getFormula() {
-        return this.themeFormula;
-    }
-    
 }

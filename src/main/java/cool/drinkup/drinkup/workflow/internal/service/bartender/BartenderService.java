@@ -33,18 +33,16 @@ import lombok.extern.slf4j.Slf4j;
 public class BartenderService {
 
     private final ChatModel chatModel;
-    private final BarService barService;
     private final String promptTemplate;
 
     @Value("${drinkup.bartender.model}")
     private String model;
 
-    public BartenderService(@Qualifier("openAiChatModel") ChatModel chatModel, BarService barService, ResourceLoader resourceLoader)
+    public BartenderService(@Qualifier("openAiChatModel") ChatModel chatModel, ResourceLoader resourceLoader)
             throws IOException {
         this.chatModel = chatModel;
         Resource promptResource = resourceLoader.getResource("classpath:prompts/bartender-prompt.txt");
         this.promptTemplate = new String(promptResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        this.barService = barService;
     }
 
     @NewSpan
@@ -72,7 +70,7 @@ public class BartenderService {
                         throw new IllegalArgumentException("Invalid message role: " + message.getRole());
                     }
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         var allMessages = new ArrayList<Message>();
         allMessages.add(systemMessage);
