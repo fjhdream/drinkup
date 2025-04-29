@@ -21,18 +21,9 @@ public class TraceIdInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         if (tracer.currentSpan() != null) {
             String traceId = tracer.currentSpan().context().traceId();
-            response.addHeader(TRACE_ID_HEADER, traceId);
+            response.setHeader(TRACE_ID_HEADER, traceId);
         }
         return true;
-    }
-
-    @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, 
-                               Object handler, Exception ex) {
-        if (tracer.currentSpan() != null) {
-            String traceId = tracer.currentSpan().context().traceId();
-            response.addHeader(TRACE_ID_HEADER, traceId);
-        }
     }
 }
 

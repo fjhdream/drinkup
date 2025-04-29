@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import cool.drinkup.drinkup.workflow.internal.controller.req.WorkflowBartenderChatReq.WorkflowBartenderChatVo;
 import cool.drinkup.drinkup.workflow.internal.service.bar.BarService;
 import cool.drinkup.drinkup.workflow.internal.service.bartender.dto.BartenderParams;
+import io.micrometer.observation.annotation.Observed;
 import io.micrometer.tracing.annotation.NewSpan;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,7 +46,11 @@ public class BartenderService {
         this.promptTemplate = new String(promptResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
     }
 
-    @NewSpan
+    @Observed(name = "ai.bartender.chat",
+        contextualName = "Bartender聊天",
+        lowCardinalityKeyValues = {
+            "Tag", "image"
+        })
     public String generateDrink(List<WorkflowBartenderChatVo> messages, BartenderParams bartenderParams) {
         var prompt = buildPrompt(messages, bartenderParams);
         var response = chatModel.call(prompt);

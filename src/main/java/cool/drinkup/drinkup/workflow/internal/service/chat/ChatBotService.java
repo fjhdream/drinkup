@@ -29,6 +29,7 @@ import cool.drinkup.drinkup.workflow.internal.controller.req.WorkflowUserChatReq
 import cool.drinkup.drinkup.workflow.internal.service.chat.dto.ChatParams;
 import cool.drinkup.drinkup.workflow.internal.service.image.ImageService;
 import cool.drinkup.drinkup.workflow.internal.util.ContentTypeUtil;
+import io.micrometer.observation.annotation.Observed;
 import io.micrometer.tracing.annotation.NewSpan;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
@@ -54,7 +55,11 @@ public class ChatBotService {
         this.contentTypeUtil = contentTypeUtil;
     }
 
-    @NewSpan
+    @Observed(name = "ai.chat",
+        contextualName = "AI聊天",
+        lowCardinalityKeyValues = {
+            "Tag", "ai"
+        })
     public String chat(List<WorkflowUserChatVo> messages, ChatParams params) {
         var prompt = buildPrompt(messages, params);
         var response = chatModel.call(prompt);

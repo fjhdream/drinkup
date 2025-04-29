@@ -9,6 +9,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import cool.drinkup.drinkup.infrastructure.spi.ImageCompressor;
 import cool.drinkup.drinkup.infrastructure.internal.image.config.properties.ImgProxyProperties;
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -16,6 +17,11 @@ public class ImgProxyImageCompressor implements ImageCompressor {
 
     private final ImgProxyProperties properties;
 
+    @Observed(name = "image.imgproxy.compress",
+        contextualName = "Imgproxy压缩图片",
+        lowCardinalityKeyValues = {
+            "Tag", "image"
+        })
     @Override
     public String compress(String imageUrl) {
         return buildSignedUrl(imageUrl, properties.getParam());
