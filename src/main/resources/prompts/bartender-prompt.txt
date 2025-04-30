@@ -73,20 +73,19 @@ ${user_demand}
     { "ingredient_name": "[原料2名称]", "ingredient_icon_type": "[原料类型，选择其一：liqueur, baseSpirit, juice, lemon, sugar, herb, dairy, fruit]", "ml": "[用量/量词一勺、一滴]"},{...}],
   "ingredient_overview": "[主要原料简述，用逗号分隔]",
   "ingredient_ alcohol_overview" "[配方内最主要的1-2种基酒的中文名称，如：伏特加、金酒、]",
-  "method": [
-    "1. [制作步骤1]",
-    "2. [制作步骤2]",
-    "3. [制作步骤3]"
-    "..."
-  ],
+  "method":
+    "1. [制作步骤1] \n
+     2. [制作步骤2] \n
+     3. [制作步骤3] \n  制作步骤, 制作步骤一二三, 使用markdown格式的String",
+
   "garnish": "[装饰物，用逗号分隔]",
   "glassware": "鸡尾酒杯 Cocktail Glass", // 对应 tage_glass , 值为中英文，//注意不得增加值，必须在其中选择
   "calories": "[卡路里，数字]",
-  "alcohol_content_percent":"[ abv 酒精度数，数字]",
+  "alcohol_content":"[ abv 酒精度数，数字]",
   "mixology": "[可选值:经典摇法, 搅拌法, 混合法, 分层法, 直接调制法]",
-  "preparation_time_mins": "[预计制作时间，数字]",
-  "tag_main_baseSpirit":"[可选值: "Gin", "Tequila", "Rum", "Vodka", "Brandy", "Liqueur", "Whiskey"]",
-  "tag_baseSpirits":"[//与 "ingredient_ alcohol_overview_cn" 对应的2个英文tag]",//注意不得增加值，必须在其中选择
+  "preparation_time": "[预计制作时间，数字, 单位为分钟]",
+  "tag_main_base_spirit":"[可选值: "Gin", "Tequila", "Rum", "Vodka", "Brandy", "Liqueur", "Whiskey"]",
+  "tag_base_spirits":"[//与 "ingredient_ alcohol_overview_cn" 对应的2个英文tag]",//注意不得增加值，必须在其中选择
   "tag_abv": "[可选值: light, medium, strong, weak, extremely_strong]",
   "tag_glass": "[可选值:icon_cocktail, icon_highball, icon_rocks, icon_champagne, icon_martini, icon_irish, icon_collins, icon_brandy, icon_wine, icon_shot, icon_hurricane]",//注意不得增加值，必须在其中选择
   "tag_mixology": "可选值: "builtInGlass", "shaken", "stirred", "layered", "muddled", "blended"",

@@ -12,6 +12,7 @@ import lombok.Data;
 public class WorkflowUserWineVo {
     private String id;
     private String name;
+    @JsonAlias("name_en")
     private String nameEn;
     private String description;
     @JsonAlias("base_ingredient")
@@ -34,7 +35,7 @@ public class WorkflowUserWineVo {
     private String invented;
     @JsonAlias("tag_main_base_spirit")
     private String tagMainBaseSpirit;
-    @JsonAlias("tag_base_spirit")
+    @JsonAlias("tag_base_spirits")
     private List<String> tagBaseSpirit;
     @JsonAlias("tag_glass")
     private String tagGlass;
