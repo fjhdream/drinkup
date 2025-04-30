@@ -46,6 +46,7 @@
 		<tea.version>1.2.0</tea.version>
 		<hibernate-types.version>2.21.1</hibernate-types.version>
 		<logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
+		<opentelemetry.logback-appender.version>2.15.0-alpha</opentelemetry.logback-appender.version>
 	</properties>
 	<dependencies>
 		<!-- Actuator + Prometheus 指标 -->
@@ -66,6 +67,12 @@
 			<groupId>io.opentelemetry</groupId>
 			<artifactId>opentelemetry-exporter-otlp</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>io.opentelemetry.instrumentation</groupId>
+			<artifactId>opentelemetry-logback-appender-1.0</artifactId>
+			<version>${opentelemetry.logback-appender.version}</version>
+		</dependency>
+
 		<!-- Spring Modulith-->
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
