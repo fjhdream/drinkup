@@ -106,3 +106,22 @@ jobs:
             --tag ${DOCKER_IMAGE_REPO}/drinkup:latest \
             ${DOCKER_IMAGE_REPO}/drinkup:amd64 \
             ${DOCKER_IMAGE_REPO}/drinkup:arm64
+      
+      # ───────── 8. 安装并配置 Cosign ─────────
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@main
+        with:
+          cosign-release: 'v2.2.2' # 使用最新稳定版
+      
+      # ───────── 9. 使用 Cosign 签名镜像 ─────────
+      - name: Sign the images with Cosign
+        env:
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          echo "$COSIGN_PRIVATE_KEY" > cosign.key
+          cosign sign --key cosign.key ${DOCKER_IMAGE_REPO}/drinkup:latest
+          cosign sign --key cosign.key ${DOCKER_IMAGE_REPO}/drinkup:amd64
+          cosign sign --key cosign.key ${DOCKER_IMAGE_REPO}/drinkup:arm64
+          rm -f cosign.key
