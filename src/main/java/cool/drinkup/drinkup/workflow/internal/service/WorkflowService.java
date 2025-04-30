@@ -128,6 +128,7 @@ public class WorkflowService {
             var chatBotResponse = objectMapper.readValue(json, WorkflowBartenderChatResp.class);
             String imageUrl = imageGenerator.generateImage(chatBotResponse.getImagePrompt());
             String imageId = imageService.storeImage(imageUrl);
+            chatBotResponse.setImage(imageId);
             userWineService.saveUserWine(chatBotResponse);
             chatBotResponse.setImage(imageService.getImageUrl(imageId));
             return chatBotResponse;
