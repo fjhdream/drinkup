@@ -67,7 +67,7 @@ public class ImageRecognitionService {
             messages.add(new SystemMessage(promptTemplate));
             Resource image = imageService.loadImage(imageId);
             String mimeType = contentTypeUtil.detectMimeType(image).toString();
-            messages.add(new UserMessage("请识别图片中的所有物品，并返回物品的名称、类型和描述。",
+            messages.add(new UserMessage("这是原料图片，请开始识别",
                     new Media(MimeType.valueOf(mimeType), image)));
             Prompt prompt = new Prompt(messages);
             ChatResponse call = chatModel.call(prompt);
