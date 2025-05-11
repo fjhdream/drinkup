@@ -63,9 +63,14 @@ public class SecurityConfig {
                 .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
                 .xssProtection(HeadersConfigurer.XXssConfig::disable)
             )
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("{\"message\":\"Token expired or invalid\",\"code\":\"-1\"}");
+                })
+            )
             .build();
     }
-
 
     @Bean
     AuthenticationManager authenticationManager(HttpSecurity http, PasswordEncoder passwordEncoder) throws Exception {
@@ -80,12 +85,11 @@ public class SecurityConfig {
     public CookieSerializer cookieSerializer() {
         DefaultCookieSerializer serializer = new DefaultCookieSerializer();
         serializer.setCookieName("SESSION");
-        serializer.setCookieMaxAge(60 * 10); // 24小时
+        serializer.setCookieMaxAge(60 * 60 * 24 * 30); // 一个月token时间
         serializer.setUseHttpOnlyCookie(false); // 允许客户端JavaScript访问
         serializer.setCookiePath("/");
         return serializer;
     }
-
 
     @Bean
     public HttpSessionEventPublisher httpSessionEventPublisher() {
