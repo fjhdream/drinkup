@@ -66,7 +66,7 @@ public class WorkflowService {
     public WorkflowUserWineResp processCocktailRequest(WorkflowUserReq userInput) {
         String userInputText = userInput.getUserInput();
         List<Document> results = vectorStore
-                .similaritySearch(SearchRequest.builder().query(userInputText).topK(2).build());
+                .similaritySearch(SearchRequest.builder().query(userInputText).topK(10).build());
         log.info("Results: {}", results);
         List<Long> wineIds = results.stream()
                 .map(Document::getMetadata)
