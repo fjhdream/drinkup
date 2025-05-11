@@ -15,6 +15,7 @@ public class BarStockCreateReq {
     public static class InnerBarStockCreateReq {
         private String name;
         private String type;
+        @JsonAlias({"icon_type"})
         private String iconType;
         private String description;
     
