@@ -87,7 +87,7 @@ ${user_demand}
   "tag_main_base_spirit":"[可选值: "Gin", "Tequila", "Rum", "Vodka", "Brandy", "Liqueur", "Whiskey"]",
   "tag_base_spirits":"[//与 "ingredient_ alcohol_overview_cn" 对应的2个英文tag]",//注意不得增加值，必须在其中选择
   "tag_abv": "[可选值: light, medium, strong, weak, extremely_strong]",
-  "tag_glass": "[可选值:icon_cocktail, icon_highball, icon_rocks, icon_champagne, icon_martini, icon_irish, icon_collins, icon_brandy, icon_wine, icon_shot, icon_hurricane]",//注意不得增加值，必须在其中选择
+  "tag_glass": "[可选值:cocktail, highball, rocks, champagne, martini, irish, collins, brandy, wine, shot, hurricane]",//注意不得增加值，必须在其中选择
   "tag_mixology": "可选值: "builtInGlass", "shaken", "stirred", "layered", "muddled", "blended"",
   "tag_cocktail_type": "[可选值: "longdrink", "short", "classic", "sparkling", "martini", "hot", "frozen", "layered", "shooter", "tropical", "creamy", "smoothie" ]",//注意不得增加值，必须在其中选择
   "tag_flavor": ["可选值: ["sweet", "sour", "bitter", "spicy", "salty", "smokey", "floral", "fruity", "creamy", "woody", "nutty", "herbal", "balance"]"],
