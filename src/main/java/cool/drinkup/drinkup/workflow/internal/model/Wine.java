@@ -9,7 +9,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -51,6 +50,7 @@ public class Wine {
     private String tagFlavor;
     private String tagComplexity;
     private String tagAbv;
+    private String tagIba;
     @Column(columnDefinition = "json")
     @JdbcTypeCode(SqlTypes.JSON)
     private String tagsOthers;

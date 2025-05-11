@@ -57,6 +57,8 @@ public class WorkflowWineVo {
     private String tagComplexity;
     @JsonAlias("tag_abv")
     private String tagAbv;
+    @JsonAlias("tag_iba")
+    private String tagIba;
     @JsonAlias("tags_others")
     private List<String> tagsOthers;
     private String image;
