@@ -80,7 +80,7 @@ public class SecurityConfig {
     public CookieSerializer cookieSerializer() {
         DefaultCookieSerializer serializer = new DefaultCookieSerializer();
         serializer.setCookieName("SESSION");
-        serializer.setCookieMaxAge(86400); // 24小时
+        serializer.setCookieMaxAge(60 * 10); // 24小时
         serializer.setUseHttpOnlyCookie(false); // 允许客户端JavaScript访问
         serializer.setCookiePath("/");
         return serializer;
