@@ -2,7 +2,14 @@ package cool.drinkup.drinkup.workflow.internal.controller.resp;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import lombok.Data;
@@ -36,6 +43,7 @@ public class WorkflowUserWineVo {
     @JsonAlias("tag_main_base_spirit")
     private String tagMainBaseSpirit;
     @JsonAlias("tag_base_spirits")
+    @JsonDeserialize(using = StringOrListDeserializer.class)
     private List<String> tagBaseSpirit;
     @JsonAlias("tag_glass")
     private String tagGlass;
@@ -70,5 +78,21 @@ public class WorkflowUserWineVo {
         private String oz;
         @JsonAlias("cl")
         private String cl;
+    }
+
+    public static class StringOrListDeserializer extends JsonDeserializer<List<String>> {
+        @Override
+        public List<String> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            JsonNode node = p.getCodec().readTree(p);
+            List<String> result = new ArrayList<>();
+            
+            if (node.isTextual()) {
+                result.add(node.asText());
+            } else if (node.isArray()) {
+                node.forEach(element -> result.add(element.asText()));
+            }
+            
+            return result;
+        }
     }
 }

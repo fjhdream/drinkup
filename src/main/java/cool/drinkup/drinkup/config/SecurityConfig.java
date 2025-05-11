@@ -18,7 +18,6 @@ import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.DefaultCookieSerializer;
 
-import cool.drinkup.drinkup.user.internal.service.DrinkupUserDetailsService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
