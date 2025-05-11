@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import cool.drinkup.drinkup.workflow.internal.controller.resp.CommonResp;
 import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowUserWineVo;
+import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowWineVo;
 import cool.drinkup.drinkup.workflow.internal.mapper.UserWineMapper;
 import cool.drinkup.drinkup.workflow.internal.mapper.WineMapper;
 import cool.drinkup.drinkup.workflow.internal.model.UserWine;
@@ -50,12 +51,12 @@ public class WineController {
         @ApiResponse(responseCode = "404", description = "未找到指定ID的酒")
     })
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CommonResp<WorkflowUserWineVo>> getWineById(@PathVariable Long id) {
+    public ResponseEntity<CommonResp<WorkflowWineVo>> getWineById(@PathVariable Long id) {
         Wine wineById = wineService.getWineById(id);
         if (wineById == null) {
             return ResponseEntity.notFound().build();
         }
-        WorkflowUserWineVo wineVo = wineMapper.toWineVo(wineById);
+        WorkflowWineVo wineVo = wineMapper.toWineVo(wineById);
         return ResponseEntity.ok(CommonResp.success(wineVo));
     }
 
@@ -69,13 +70,13 @@ public class WineController {
         @ApiResponse(responseCode = "400", description = "请求参数错误")
     })
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CommonResp<Page<WorkflowUserWineVo>>> getWinesByTag(
+    public ResponseEntity<CommonResp<Page<WorkflowWineVo>>> getWinesByTag(
             @RequestParam(required = false) String tag,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("id").ascending());
         Page<Wine> wines = wineService.getWinesByTag(tag, pageRequest);
-        Page<WorkflowUserWineVo> wineVos = wines.map(wineMapper::toWineVo);
+        Page<WorkflowWineVo> wineVos = wines.map(wineMapper::toWineVo);
         return ResponseEntity.ok(CommonResp.success(wineVos));
     }
 
@@ -86,7 +87,7 @@ public class WineController {
     @RequestParam(defaultValue = "10") int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("id").descending());
         Page<UserWine> userWine = userWineService.getUserWine(pageRequest);
-        Page<WorkflowUserWineVo> userWineVos = userWine.map(userWineMapper::toUserWineVo);
+        Page<WorkflowUserWineVo> userWineVos = userWine.map(userWineMapper::toWorkflowUserWineVo);
         return ResponseEntity.ok(CommonResp.success(userWineVos));
     }
 }

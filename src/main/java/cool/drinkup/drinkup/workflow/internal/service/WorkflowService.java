@@ -23,8 +23,8 @@ import cool.drinkup.drinkup.workflow.internal.controller.req.WorkflowUserReq;
 import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowBartenderChatResp;
 import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowStockRecognitionResp;
 import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowUserChatResp;
-import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowUserWineResp;
-import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowUserWineVo;
+import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowWineResp;
+import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowWineVo;
 import cool.drinkup.drinkup.workflow.internal.mapper.WineMapper;
 import cool.drinkup.drinkup.workflow.internal.model.Bar;
 import cool.drinkup.drinkup.workflow.internal.model.BarStock;
@@ -63,7 +63,7 @@ public class WorkflowService {
     private final ThemeFactory themeFactory;
     private final ImageGenerator imageGenerator;
 
-    public WorkflowUserWineResp processCocktailRequest(WorkflowUserReq userInput) {
+    public WorkflowWineResp processCocktailRequest(WorkflowUserReq userInput) {
         String userInputText = userInput.getUserInput();
         List<Document> results = vectorStore
                 .similaritySearch(SearchRequest.builder().query(userInputText).topK(10).build());
@@ -74,10 +74,10 @@ public class WorkflowService {
                 .collect(Collectors.toList());
         List<Wine> wines = wineRepository.findAllById(wineIds);
         log.info("Wines: {}", wines);
-        List<WorkflowUserWineVo> workflowUserWineVos = wines.stream()
+        List<WorkflowWineVo> workflowUserWineVos = wines.stream()
                 .map(wineMapper::toWineVo)
                 .collect(Collectors.toList());
-        WorkflowUserWineResp workflowUserWIneResp = new WorkflowUserWineResp();
+        WorkflowWineResp workflowUserWIneResp = new WorkflowWineResp();
         workflowUserWIneResp.setWines(workflowUserWineVos);
         return workflowUserWIneResp;
     }

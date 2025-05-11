@@ -20,7 +20,7 @@ import cool.drinkup.drinkup.workflow.internal.controller.resp.CommonResp;
 import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowBartenderChatResp;
 import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowStockRecognitionResp;
 import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowUserChatResp;
-import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowUserWineResp;
+import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowWineResp;
 import cool.drinkup.drinkup.workflow.internal.service.WorkflowService;
 import cool.drinkup.drinkup.workflow.internal.service.rag.DataLoaderService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,7 +49,7 @@ public class WorkflowController {
     @ApiResponse(responseCode = "200", description = "Successfully processed cocktail request")
     @PostMapping("/cocktail")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CommonResp<WorkflowUserWineResp>> processCocktailRequest(
+    public ResponseEntity<CommonResp<WorkflowWineResp>> processCocktailRequest(
         @Parameter(description = "User input for cocktail workflow") 
         @RequestBody WorkflowUserReq userInput
     ) {

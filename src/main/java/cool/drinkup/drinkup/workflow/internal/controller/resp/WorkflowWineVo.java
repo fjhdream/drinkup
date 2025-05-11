@@ -16,7 +16,7 @@ import lombok.Data;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class WorkflowUserWineVo {
+public class WorkflowWineVo {
     private String id;
     private String name;
     @JsonAlias("name_en")
@@ -60,10 +60,6 @@ public class WorkflowUserWineVo {
     @JsonAlias("tags_others")
     private List<String> tagsOthers;
     private String image;
-    @JsonAlias("theme_story")
-    private String themeStory;
-    @JsonAlias("theme_feature_tag")
-    private String themeFeatureTag;
     @JsonAlias("create_date")
     private String createDate;
     @JsonAlias("update_date")

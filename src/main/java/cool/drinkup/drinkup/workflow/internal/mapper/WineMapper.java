@@ -12,8 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collections;
 import java.util.List;
 
-import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowUserWineVo;
-import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowUserWineVo.Ingredient;
+import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowWineVo;
+import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowWineVo.Ingredient;
 import cool.drinkup.drinkup.workflow.internal.model.Wine;
 import cool.drinkup.drinkup.workflow.internal.service.image.ImageService;
 
@@ -32,7 +32,7 @@ public abstract class WineMapper {
     @Mapping(source = "tagFlavor", target = "tagFlavor", qualifiedByName = "jsonToStringList")
     @Mapping(source = "tagsOthers", target = "tagsOthers", qualifiedByName = "jsonToStringList")
     @Mapping(source = "image", target = "image", qualifiedByName = "imageToUrl")
-    public abstract WorkflowUserWineVo toWineVo(Wine wine);
+    public abstract WorkflowWineVo toWineVo(Wine wine);
 
     @Named("jsonToIngredientsList")
     protected List<Ingredient> jsonToIngredientsList(String json) {

@@ -31,7 +31,7 @@ public class Bar {
 
     private String description;
 
-    private Integer barImageType = 0;
+    private Integer barImageType;
 
     @JsonManagedReference
     @OneToMany(mappedBy = "bar", cascade = CascadeType.ALL, orphanRemoval = true)

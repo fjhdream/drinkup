@@ -19,7 +19,7 @@ import java.util.List;
 
 import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowBartenderChatResp;
 import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowUserWineVo;
-import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowUserWineVo.Ingredient;
+import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowWineVo;
 import cool.drinkup.drinkup.workflow.internal.model.UserWine;
 import cool.drinkup.drinkup.workflow.internal.service.image.ImageService;
 
@@ -54,7 +54,7 @@ public abstract class UserWineMapper {
     }
 
     @Named("IngredientListToJsonString")
-    protected String ingredientListToJsonString(List<WorkflowUserWineVo.Ingredient> ingredients) {
+    protected String ingredientListToJsonString(List<WorkflowWineVo.Ingredient> ingredients) {
         if (ingredients == null || ingredients.isEmpty()) {
             return null;
         }
@@ -71,17 +71,38 @@ public abstract class UserWineMapper {
         return imageService.getImageUrl(imageId);
     }
 
-    @Mapping(source = "ingredients", target = "ingredients", qualifiedByName = "jsonToIngredientsList")
+    @Mapping(source = "ingredients", target = "ingredients", qualifiedByName = "jsonToWineIngredientsList")
     @Mapping(source = "tagBaseSpirit", target = "tagBaseSpirit", qualifiedByName = "jsonToStringList")
     @Mapping(source = "tagFlavor", target = "tagFlavor", qualifiedByName = "jsonToStringList")
     @Mapping(source = "tagsOthers", target = "tagsOthers", qualifiedByName = "jsonToStringList")
     @Mapping(source = "image", target = "image", qualifiedByName = "imageToUrl")
     @Mapping(source = "createDate", target = "createDate", qualifiedByName = "dateToString")
     @Mapping(source = "updateDate", target = "updateDate", qualifiedByName = "dateToString")
-    public abstract WorkflowUserWineVo toUserWineVo(UserWine userWine);
+    public abstract WorkflowWineVo toUserWineVo(UserWine userWine);
 
-    @Named("jsonToIngredientsList")
-    protected List<Ingredient> jsonToIngredientsList(String json) {
+    @Mapping(source = "ingredients", target = "ingredients", qualifiedByName = "jsonToUserWineIngredientsList")
+    @Mapping(source = "tagBaseSpirit", target = "tagBaseSpirit", qualifiedByName = "jsonToStringList")
+    @Mapping(source = "tagFlavor", target = "tagFlavor", qualifiedByName = "jsonToStringList")
+    @Mapping(source = "tagsOthers", target = "tagsOthers", qualifiedByName = "jsonToStringList")
+    @Mapping(source = "image", target = "image", qualifiedByName = "imageToUrl")
+    @Mapping(source = "createDate", target = "createDate", qualifiedByName = "dateToString")
+    @Mapping(source = "updateDate", target = "updateDate", qualifiedByName = "dateToString")
+    public abstract WorkflowUserWineVo toWorkflowUserWineVo(UserWine userWine);
+
+    @Named("jsonToWineIngredientsList")
+    protected List<WorkflowWineVo.Ingredient> jsonToWineIngredientsList(String json) {
+        if (json == null || json.isEmpty()) {
+            return Collections.emptyList();
+        }
+        try {
+            return OBJECT_MAPPER.readValue(json, new TypeReference<List<WorkflowWineVo.Ingredient>>() {});
+        } catch (JsonProcessingException e) {
+            return Collections.emptyList();
+        }
+    }
+
+    @Named("jsonToUserWineIngredientsList")
+    protected List<WorkflowUserWineVo.Ingredient> jsonToUserWineIngredientsList(String json) {
         if (json == null || json.isEmpty()) {
             return Collections.emptyList();
         }

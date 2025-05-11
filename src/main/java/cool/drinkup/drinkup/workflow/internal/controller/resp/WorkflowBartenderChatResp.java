@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class WorkflowBartenderChatResp extends WorkflowUserWineVo {
+public class WorkflowBartenderChatResp extends WorkflowWineVo {
     @JsonAlias("theme_feature_tag")
     private String themeFeatureTag;
     @JsonAlias("theme_story")
