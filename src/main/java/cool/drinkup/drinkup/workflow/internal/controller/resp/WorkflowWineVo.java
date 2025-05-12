@@ -72,7 +72,7 @@ public class WorkflowWineVo {
     public static class Ingredient {
         @JsonAlias("ingredient_name")
         private String ingredientName;
-        @JsonAlias("ingredient_icon_type")
+        @JsonAlias({"ingredient_icon_type", "ingredient_type"})
         private String ingredientIconType;
         @JsonAlias("ml")
         private String ml;

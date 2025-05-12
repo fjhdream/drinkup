@@ -31,10 +31,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "酒管理", description = "提供酒相关的API接口")
 public class WineController {
 
-    private WineService wineService;
-    private UserWineService userWineService;
-    private WineMapper wineMapper;
-    private UserWineMapper userWineMapper;
+    private final WineService wineService;
+    private final UserWineService userWineService;
+    private final WineMapper wineMapper;
+    private final UserWineMapper userWineMapper;
 
     public WineController(WineService wineService, UserWineService userWineService, WineMapper wineMapper, UserWineMapper userWineMapper) {
         this.wineService = wineService;
@@ -72,10 +72,11 @@ public class WineController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommonResp<Page<WorkflowWineVo>>> getWinesByTag(
             @RequestParam(required = false) String tag,
+            @RequestParam(required = false) String iba,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("id").ascending());
-        Page<Wine> wines = wineService.getWinesByTag(tag, pageRequest);
+        Page<Wine> wines = wineService.getWinesByTag(tag, iba, pageRequest);
         Page<WorkflowWineVo> wineVos = wines.map(wineMapper::toWineVo);
         return ResponseEntity.ok(CommonResp.success(wineVos));
     }
