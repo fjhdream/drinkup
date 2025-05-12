@@ -1,5 +1,6 @@
 package cool.drinkup.drinkup.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,6 +29,9 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
     private final UserDetailsService drinkupUserDetailsService;
+
+    @Value("${drinkup.security.token.expire:60 * 60 * 24 * 30}")
+    private Integer expiredTime;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -85,7 +89,7 @@ public class SecurityConfig {
     public CookieSerializer cookieSerializer() {
         DefaultCookieSerializer serializer = new DefaultCookieSerializer();
         serializer.setCookieName("SESSION");
-        serializer.setCookieMaxAge(60 * 60 * 24 * 30); // 一个月token时间
+        serializer.setCookieMaxAge(expiredTime); // 一个月token时间
         serializer.setUseHttpOnlyCookie(false); // 允许客户端JavaScript访问
         serializer.setCookiePath("/");
         return serializer;
