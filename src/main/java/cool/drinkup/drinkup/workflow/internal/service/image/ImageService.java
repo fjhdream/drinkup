@@ -29,11 +29,13 @@ public class ImageService {
     private final ImageCompressor imageCompressor;
 
     private final RestClient restClient = RestClient.builder().build();
-    private final String bucket = "object-bucket";
     private static String prefix = "images/";
 
     @Value("${drinkup.image.save.s3.url:https://img.fjhdream.lol/}")
     private String imageUrl;
+
+    @Value("${drinkup.image.save.s3.bucket:object-bucket}")
+    private String bucket;
 
     public String storeImage(MultipartFile file) {
         try {
