@@ -6,6 +6,7 @@ public enum ThemeEnum {
     PHILOSOPHY,
     CYBER_WORK,
     MOVIE,
+    RANDOM,
     ;
 
     public static @Nullable ThemeEnum fromValue(String value) {

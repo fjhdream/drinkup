@@ -6,6 +6,7 @@ import cool.drinkup.drinkup.workflow.internal.service.bartender.theme.impl.Cyber
 import cool.drinkup.drinkup.workflow.internal.service.bartender.theme.impl.DummyTheme;
 import cool.drinkup.drinkup.workflow.internal.service.bartender.theme.impl.MovieTheme;
 import cool.drinkup.drinkup.workflow.internal.service.bartender.theme.impl.PhilosophyTheme;
+import cool.drinkup.drinkup.workflow.internal.service.bartender.theme.impl.RandomTheme;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 
@@ -16,6 +17,7 @@ public class ThemeFactory {
     private final CyberWorkTheme cyberWorkTheme;
     private final PhilosophyTheme philosophyTheme;
     private final MovieTheme movieTheme;
+    private final RandomTheme randomTheme;
     private final DummyTheme dummyTheme;
     
     public Theme getTheme(@Nullable ThemeEnum themeEnum) {
@@ -26,6 +28,7 @@ public class ThemeFactory {
             case PHILOSOPHY -> philosophyTheme;
             case CYBER_WORK -> cyberWorkTheme;
             case MOVIE -> movieTheme;
+            case RANDOM -> randomTheme;
         };
     }
 }
