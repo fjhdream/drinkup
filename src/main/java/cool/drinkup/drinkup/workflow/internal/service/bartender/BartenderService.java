@@ -10,7 +10,6 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.ResponseFormat;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -20,13 +19,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
+import cool.drinkup.drinkup.workflow.internal.config.BartenderProperties;
 import cool.drinkup.drinkup.workflow.internal.controller.req.WorkflowBartenderChatReq.WorkflowBartenderChatVo;
-import cool.drinkup.drinkup.workflow.internal.service.bar.BarService;
 import cool.drinkup.drinkup.workflow.internal.service.bartender.dto.BartenderParams;
 import io.micrometer.observation.annotation.Observed;
-import io.micrometer.tracing.annotation.NewSpan;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -35,15 +32,14 @@ public class BartenderService {
 
     private final ChatModel chatModel;
     private final String promptTemplate;
+    private final BartenderProperties bartenderProperties;
 
-    @Value("${drinkup.bartender.model}")
-    private String model;
-
-    public BartenderService(@Qualifier("openAiChatModel") ChatModel chatModel, ResourceLoader resourceLoader)
+    public BartenderService(@Qualifier("openAiChatModel") ChatModel chatModel, ResourceLoader resourceLoader, BartenderProperties bartenderProperties)
             throws IOException {
         this.chatModel = chatModel;
         Resource promptResource = resourceLoader.getResource("classpath:prompts/bartender-prompt.txt");
         this.promptTemplate = new String(promptResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        this.bartenderProperties = bartenderProperties;
     }
 
     @Observed(name = "ai.bartender.chat",
@@ -52,11 +48,22 @@ public class BartenderService {
             "Tag", "image"
         })
     public String generateDrink(List<WorkflowBartenderChatVo> messages, BartenderParams bartenderParams) {
-        var prompt = buildPrompt(messages, bartenderParams);
-        var response = chatModel.call(prompt);
-        String text = response.getResult().getOutput().getText();
-        log.info("Chat response: {}", text);
-        return text;
+        try {
+            var prompt = buildPrompt(messages, bartenderParams);
+            var response = chatModel.call(prompt);
+            
+            if (response.getResult() == null) {
+                log.error("AI response result is null. Response details: {}", response);
+                throw new RuntimeException("AI response result is null");
+            }
+            
+            String text = response.getResult().getOutput().getText();
+            log.info("Chat response: {}", text);
+            return text;
+        } catch (Exception e) {
+            log.error("Error generating drink recommendation", e);
+            return "An error occurred while generating a drink recommendation. Please try again later.";
+        }
     }
 
     private Prompt buildPrompt(List<WorkflowBartenderChatVo> messages, BartenderParams bartenderParams) {
@@ -82,8 +89,13 @@ public class BartenderService {
         allMessages.addAll(historyMessages);
 
         return new Prompt(allMessages, OpenAiChatOptions.builder()
-                .model(this.model)
-                .responseFormat(ResponseFormat.builder().type(ResponseFormat.Type.JSON_OBJECT).build())
+                .model(bartenderProperties.getModel())
+                .temperature(bartenderProperties.getTemperature())
+                .responseFormat(
+                    ResponseFormat
+                    .builder()
+                    .type(ResponseFormat.Type.JSON_OBJECT)
+                    .build())
                 .build());
     }
 
