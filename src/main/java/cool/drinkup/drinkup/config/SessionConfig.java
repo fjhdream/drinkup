@@ -1,6 +1,7 @@
 package cool.drinkup.drinkup.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
@@ -32,6 +33,9 @@ import lombok.extern.slf4j.Slf4j;
 public class SessionConfig extends AbstractHttpSessionApplicationInitializer implements WebMvcConfigurer {
 
     private final TraceIdInterceptor traceIdInterceptor;
+
+    @Value("${drinkup.security.token.expire:2592000}")
+    private Integer expiredTime;
 
     public SessionConfig(TraceIdInterceptor traceIdInterceptor) {
         this.traceIdInterceptor = traceIdInterceptor;
@@ -81,7 +85,7 @@ public class SessionConfig extends AbstractHttpSessionApplicationInitializer imp
 
     @Autowired
     public void customize(RedisSessionRepository sessionRepository) {
-        sessionRepository.setDefaultMaxInactiveInterval(Duration.ofHours(24));
+        sessionRepository.setDefaultMaxInactiveInterval(Duration.ofSeconds(expiredTime));
     }
 
     @Bean

@@ -30,7 +30,7 @@ public class SecurityConfig {
 
     private final UserDetailsService drinkupUserDetailsService;
 
-    @Value("${drinkup.security.token.expire:60 * 60 * 24 * 30}")
+    @Value("${drinkup.security.token.expire:2592000}")
     private Integer expiredTime;
 
     @Bean
