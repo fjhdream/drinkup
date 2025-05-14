@@ -7,7 +7,6 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -88,13 +87,7 @@ public class ImageService {
 
     public String storeImage(String imageUrl) {
         log.info("Storing image from URL: {}", imageUrl);
-        byte[] imageBytes = restClient.get()
-                    .uri(URI.create(imageUrl))
-                    .retrieve()
-                    .body(byte[].class);
-        if (imageBytes == null || imageBytes.length == 0) {
-            throw new RuntimeException("Failed to load image: Empty response");
-        }
+        byte[] imageBytes = downloadImageWithRetry(imageUrl);
         
         // Extract extension from original URL
         String extension = ".jpg"; // Default extension
@@ -129,6 +122,46 @@ public class ImageService {
         }
     }
     
+    private byte[] downloadImageWithRetry(String imageUrl) {
+        int maxRetries = 3;
+        int retryDelayMs = 1000; // 1 second initial delay
+        
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                byte[] imageBytes = restClient.get()
+                        .uri(URI.create(imageUrl))
+                        .retrieve()
+                        .body(byte[].class);
+                
+                if (imageBytes == null || imageBytes.length == 0) {
+                    throw new RuntimeException("Empty response");
+                }
+                
+                return imageBytes;
+            } catch (Exception e) {
+                if (attempt == maxRetries) {
+                    log.error("Failed to download image after {} attempts from URL: {}", maxRetries, imageUrl, e);
+                    throw new RuntimeException("Failed to download image: " + e.getMessage(), e);
+                }
+                
+                log.warn("Error downloading image (attempt {}/{}): {}. Retrying in {} ms...", 
+                        attempt, maxRetries, e.getMessage(), retryDelayMs);
+                
+                try {
+                    Thread.sleep(retryDelayMs);
+                    // Exponential backoff
+                    retryDelayMs *= 2;
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Download interrupted", ie);
+                }
+            }
+        }
+        
+        // This should never happen due to the throw in the final retry
+        throw new RuntimeException("Failed to download image after retries");
+    }
+    
     private String getContentTypeFromExtension(String extension) {
         return switch (extension.toLowerCase()) {
             case ".jpg", ".jpeg" -> "image/jpeg";
@@ -145,16 +178,10 @@ public class ImageService {
         String imageUrl = getImageUrl(imageId);
         String compressedImageUrl = imageCompressor.compress(imageUrl);
         try {
-            byte[] imageBytes = restClient.get()
-                    .uri(URI.create(compressedImageUrl))
-                    .retrieve()
-                    .body(byte[].class);
-            if (imageBytes == null || imageBytes.length == 0) {
-                throw new RuntimeException("Failed to load image: Empty response");
-            }
+            byte[] imageBytes = downloadImageWithRetry(compressedImageUrl);
             log.info("Successfully loaded image: {}", imageId);
             return new ByteArrayResource(imageBytes);
-        } catch (RestClientException e) {
+        } catch (Exception e) {
             log.error("Failed to load image: {}", imageId, e);
             throw new RuntimeException("Failed to load image: " + e.getMessage(), e);
         }
