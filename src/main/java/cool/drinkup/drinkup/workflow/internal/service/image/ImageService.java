@@ -3,6 +3,7 @@ package cool.drinkup.drinkup.workflow.internal.service.image;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
@@ -14,7 +15,6 @@ import java.net.URI;
 import java.util.UUID;
 
 import cool.drinkup.drinkup.infrastructure.spi.ImageCompressor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -22,13 +22,12 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ImageService {
 
     private final S3Client s3Client;
     private final ImageCompressor imageCompressor;
 
-    private final RestClient restClient = RestClient.builder().build();
+    private final RestClient restClient;
     private static String prefix = "images/";
 
     @Value("${drinkup.image.save.s3.url:https://img.fjhdream.lol/}")
@@ -36,6 +35,19 @@ public class ImageService {
 
     @Value("${drinkup.image.save.s3.bucket:object-bucket}")
     private String bucket;
+    
+    public ImageService(S3Client s3Client, ImageCompressor imageCompressor) {
+        this.s3Client = s3Client;
+        this.imageCompressor = imageCompressor;
+        
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(30000); // 30 seconds
+        factory.setReadTimeout(30000);    // 30 seconds
+        
+        this.restClient = RestClient.builder()
+                .requestFactory(factory)
+                .build();
+    }
 
     public String storeImage(MultipartFile file) {
         try {
@@ -75,6 +87,7 @@ public class ImageService {
     }
 
     public String storeImage(String imageUrl) {
+        log.info("Storing image from URL: {}", imageUrl);
         byte[] imageBytes = restClient.get()
                     .uri(URI.create(imageUrl))
                     .retrieve()
