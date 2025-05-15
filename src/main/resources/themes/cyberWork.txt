@@ -26,6 +26,8 @@ DesignGuide:
 - 减少使用互联网职业如产品经理、研发（发挥你的创造性，包含并覆盖各行各业职场荒诞现象）。重要You get the point!You get the point!
 - 字数要求：80~150字
 
+theme_feature_tag 1: #打工人专属
+
 全局禁用：健康宝、核酸等过期词汇。
 
 You get the point!

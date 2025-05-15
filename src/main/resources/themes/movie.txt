@@ -38,6 +38,8 @@ DesignGuide:
 - 引用不可解释剧情，仅作为金句情绪来源
 - 所有文字需具备传播性、节奏感、留白感
 
+theme_feature_tag 1: #电影情绪
+
 **示例**：
 name_cn：他来过三次 
 name_en: Loops in Peach
