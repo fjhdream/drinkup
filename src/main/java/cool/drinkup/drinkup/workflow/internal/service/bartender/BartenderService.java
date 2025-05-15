@@ -45,7 +45,7 @@ public class BartenderService {
     @Observed(name = "ai.bartender.chat",
         contextualName = "Bartender聊天",
         lowCardinalityKeyValues = {
-            "Tag", "image"
+            "Tag", "ai"
         })
     public String generateDrink(List<WorkflowBartenderChatVo> messages, BartenderParams bartenderParams) {
         try {
