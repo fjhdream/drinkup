@@ -7,9 +7,9 @@ import org.springframework.web.client.RestClientException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import cool.drinkup.drinkup.infrastructure.spi.ImageGenerator;
 import cool.drinkup.drinkup.infrastructure.internal.image.config.properties.GlifProperties;
 import cool.drinkup.drinkup.infrastructure.internal.image.impl.dto.GlifImageRequest;
+import cool.drinkup.drinkup.infrastructure.spi.ImageGenerator;
 import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +33,7 @@ public class GlifImageGenerator implements ImageGenerator {
             GlifImageRequest glifImageRequest = new GlifImageRequest(properties.getGlifId(), input);
             String response = restClient.post()
                     .uri(properties.getApiUrl())
-                    .header("Authorization", "Bearer " + properties.getBearerToken())
+                    .header("Authorization", properties.getBearerToken())
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(glifImageRequest)
                     .retrieve()
