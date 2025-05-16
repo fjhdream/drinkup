@@ -51,6 +51,7 @@ public class BartenderService {
         try {
             var prompt = buildPrompt(messages, bartenderParams);
             var response = chatModel.call(prompt);
+            log.info("bartender response: {}", response);
             
             if (response.getResult() == null) {
                 log.error("AI response result is null. Response details: {}", response);

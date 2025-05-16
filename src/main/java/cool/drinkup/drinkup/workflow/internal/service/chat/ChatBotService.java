@@ -61,6 +61,7 @@ public class ChatBotService {
     public String chat(List<WorkflowUserChatVo> messages, ChatParams params) {
         var prompt = buildPrompt(messages, params);
         var response = chatModel.call(prompt);
+        log.info("ai response : {}", response);
         String text = response.getResult().getOutput().getText();
         log.info("Chat response: {}", text);
         return text;
