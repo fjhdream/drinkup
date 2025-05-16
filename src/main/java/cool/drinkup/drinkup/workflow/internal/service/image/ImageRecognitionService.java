@@ -7,7 +7,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.model.Media;
+import org.springframework.ai.content.Media;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -67,8 +67,8 @@ public class ImageRecognitionService {
             messages.add(new SystemMessage(promptTemplate));
             Resource image = imageService.loadImage(imageId);
             String mimeType = contentTypeUtil.detectMimeType(image).toString();
-            messages.add(new UserMessage("这是原料图片，请开始识别",
-                    new Media(MimeType.valueOf(mimeType), image)));
+            UserMessage userMessage = UserMessage.builder().text("这是原料图片，请开始识别").media(List.of(new Media(MimeType.valueOf(mimeType), image))).build();
+            messages.add(userMessage);
             Prompt prompt = new Prompt(messages);
             ChatResponse call = chatModel.call(prompt);
             Generation result = call.getResult();

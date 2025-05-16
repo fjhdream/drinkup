@@ -11,17 +11,17 @@ import lombok.Data;
 
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "drinkup.bartender")
-public class BartenderProperties {
-    private String model = "deepseek/deepseek-chat-v3-0324";
-    private Double temperature = 0.8;
+@ConfigurationProperties(prefix = "drinkup.chat")
+public class ChatBotProperties {
+    private String model = "google/gemini-2.0-flash-001";
     private String server = "openai";
 
     @Bean
-    public ChatModel bartenderChatModel(OpenAiChatModel openAiChatModel, DeepSeekChatModel deepSeekChatModel) {
+    public ChatModel chatBotModel(OpenAiChatModel openAiChatModel, DeepSeekChatModel deepSeekChatModel) {
         if ("deepseek".equals(server)) {
             return deepSeekChatModel;
         }
         return openAiChatModel;
     }
+    
 }

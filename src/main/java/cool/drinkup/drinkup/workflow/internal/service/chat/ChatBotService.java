@@ -7,11 +7,10 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.model.Media;
+import org.springframework.ai.content.Media;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.ResponseFormat;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -25,12 +24,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import cool.drinkup.drinkup.workflow.internal.config.ChatBotProperties;
 import cool.drinkup.drinkup.workflow.internal.controller.req.WorkflowUserChatReq.WorkflowUserChatVo;
 import cool.drinkup.drinkup.workflow.internal.service.chat.dto.ChatParams;
 import cool.drinkup.drinkup.workflow.internal.service.image.ImageService;
 import cool.drinkup.drinkup.workflow.internal.util.ContentTypeUtil;
 import io.micrometer.observation.annotation.Observed;
-import io.micrometer.tracing.annotation.NewSpan;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 
@@ -42,17 +41,16 @@ public class ChatBotService {
     private final String promptTemplate;
     private final ImageService imageService;
     private final ContentTypeUtil contentTypeUtil;
+    private final ChatBotProperties chatBotProperties;
 
-    @Value("${drinkup.chat.model}")
-    private String model;
-
-    public ChatBotService(@Qualifier("openAiChatModel") ChatModel chatModel, ResourceLoader resourceLoader, 
-    ImageService imageService, ContentTypeUtil contentTypeUtil) throws IOException {
+    public ChatBotService(@Qualifier("chatBotModel") ChatModel chatModel, ResourceLoader resourceLoader, 
+    ImageService imageService, ContentTypeUtil contentTypeUtil, ChatBotProperties chatBotProperties) throws IOException {
         this.chatModel = chatModel;
         Resource promptResource = resourceLoader.getResource("classpath:prompts/chat-prompt.txt");
         this.promptTemplate = new String(promptResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         this.imageService = imageService;
         this.contentTypeUtil = contentTypeUtil;
+        this.chatBotProperties = chatBotProperties;
     }
 
     @Observed(name = "ai.chat",
@@ -140,14 +138,15 @@ public class ChatBotService {
             try {
                 String mime = contentTypeUtil.detectMimeType(resource);
                 Media media = new Media(MimeType.valueOf(mime), resource);
-                allMessages.add(new UserMessage("This is the image of the user's stock: ", media));
+                UserMessage userMessage = UserMessage.builder().text("This is the image of the user's stock: ").media(List.of(media)).build();
+                allMessages.add(userMessage);
             } catch (IOException e) {
                 log.error("Error loading image: {}", e.getMessage());
             }
         }
 
         return new Prompt(allMessages, OpenAiChatOptions.builder()
-                    .model(this.model)
+                    .model(chatBotProperties.getModel())
                     .responseFormat(ResponseFormat.builder().type(ResponseFormat.Type.JSON_OBJECT).build())
                     .build());
     }

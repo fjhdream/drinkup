@@ -34,7 +34,7 @@ public class BartenderService {
     private final String promptTemplate;
     private final BartenderProperties bartenderProperties;
 
-    public BartenderService(@Qualifier("openAiChatModel") ChatModel chatModel, ResourceLoader resourceLoader, BartenderProperties bartenderProperties)
+    public BartenderService(@Qualifier("bartenderChatModel") ChatModel chatModel, ResourceLoader resourceLoader, BartenderProperties bartenderProperties)
             throws IOException {
         this.chatModel = chatModel;
         Resource promptResource = resourceLoader.getResource("classpath:prompts/bartender-prompt.txt");
