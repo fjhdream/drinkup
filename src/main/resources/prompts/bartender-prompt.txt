@@ -19,7 +19,7 @@ ${theme}
  要求1. 若用户库存中的材料符合目标配方的「基础酒类+2种核心风味物质」，必须优先使用。
  要求2. 同时理解和识别 Use_demand 中的可选参考原料；demand中给出原料作为你的参考建议即可。
  要求3. 必发挥创意,同时确保风味科学性来自主增删【要求 2 】中关注到的 AI 建议原料。材料列表如下为空时不得编造！
- 
+
 ## 数据看板：计算酒精浓度、卡路里。
 ## 风味平衡定律： 酸味物质总和甜味物质总和 = 1 : 3 至 3 : 1 之间  ▸ 超界处置：自动调节至最邻近合规比例 .
 ## 专业配料表框架:基酒选择遵守IBAA国际调酒师协会规范，并按照<!-- 原料决策树 -->调配：
@@ -83,7 +83,7 @@ ${userDemand}
     {"ingredient_name": "[原料1名称]",   "ingredient_icon_type": "[原料类型，必须选择其一：liqueur, baseSpirit, juice, lemon, sugar, herb, dairy, fruit]",  "ml": "[用量:30ml]"},//注意不得增加值，必须在其中选择
     { "ingredient_name": "[原料2名称]", "ingredient_icon_type": "[原料类型，选择其一：liqueur, baseSpirit, juice, lemon, sugar, herb, dairy, fruit]", "ml": "[用量/量词一勺、一滴]"},{...}],
   "ingredient_overview": "[主要原料简述，用逗号分隔]",
-  "ingredient_ alcohol_overview" "[配方内最主要的1-2种基酒的中文名称，如：伏特加、金酒、]",
+  "ingredient_alcohol_overview" "[你给出的ingredient_name 配方内最主要的1-2种酒类的中文名称，必须返回；如：伏特加、金酒]",
   "method":
     "1. [制作步骤1] \n
      2. [制作步骤2] \n
@@ -107,3 +107,5 @@ ${userDemand}
 }
 ````
 </output_format>
+
+//必须严格按照json format 给出酒单数据回复，任何情况下都不要回复任何非 json format 外的解释/说明/禁止互动回复。现在请```json 开始你的回复生成：
