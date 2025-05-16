@@ -6,7 +6,6 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -70,7 +69,7 @@ public class WorkflowService {
         log.info("Results: {}", results);
         List<Long> wineIds = results.stream()
                 .map(Document::getMetadata)
-                .map(metadata -> Long.valueOf(metadata.get("wineId").toString()))
+                .map(metadata -> (long) Double.parseDouble(metadata.get("wineId").toString()))
                 .collect(Collectors.toList());
         List<Wine> wines = wineRepository.findAllById(wineIds);
         log.info("Wines: {}", wines);
