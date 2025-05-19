@@ -70,3 +70,18 @@ services:
       - "etcd"
       - "minio"
   
+  # 添加 drinkup 应用服务
+  drinkup:
+    image: registry.fjhdream.lol/drinkup/drinkup:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/workspace/logs
+      - ./config:/workspace/config
+    command: ["java", "-jar", "/app/app.jar", "--spring.config.location=file:/workspace/config/"]
+    depends_on:
+      - mariadb
+      - redis
+      - minio
+      - standalone
+  

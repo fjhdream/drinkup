@@ -1,12 +1,15 @@
 package cool.drinkup.drinkup.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.session.data.redis.RedisSessionRepository;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 import org.springframework.session.web.context.AbstractHttpSessionApplicationInitializer;
@@ -16,6 +19,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.time.Duration;
 
+import cool.drinkup.drinkup.config.Interceptors.TraceIdInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -28,9 +32,19 @@ import lombok.extern.slf4j.Slf4j;
 @EnableRedisHttpSession
 public class SessionConfig extends AbstractHttpSessionApplicationInitializer implements WebMvcConfigurer {
 
+    private final TraceIdInterceptor traceIdInterceptor;
+
+    @Value("${drinkup.security.token.expire:2592000}")
+    private Integer expiredTime;
+
+    public SessionConfig(TraceIdInterceptor traceIdInterceptor) {
+        this.traceIdInterceptor = traceIdInterceptor;
+    }
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new SessionTimeoutRefreshInterceptor());
+        registry.addInterceptor(traceIdInterceptor);
     }
 
     public static class SessionTimeoutRefreshInterceptor implements HandlerInterceptor {
@@ -71,6 +85,11 @@ public class SessionConfig extends AbstractHttpSessionApplicationInitializer imp
 
     @Autowired
     public void customize(RedisSessionRepository sessionRepository) {
-        sessionRepository.setDefaultMaxInactiveInterval(Duration.ofHours(24));
+        sessionRepository.setDefaultMaxInactiveInterval(Duration.ofSeconds(expiredTime));
+    }
+
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

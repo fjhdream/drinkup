@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <property name="LOG_PATH" value="logs"/>
+
+  <!-- ★ 统一用 JSON，内含 traceId/spanId ★ -->
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+      <providers>
+        <timestamp/>
+        <traceId/>     <!-- Micrometer 会把 traceId 注入到 MDC -->
+        <spanId/>
+        <logLevel/>
+        <threadName/>
+        <loggerName/>
+        <message/>
+        <stackTrace/>  <!-- 可选 -->
+        <mdc/>         <!-- 其余自定义 MDC -->
+        <globalCustomFields>{"app":"drinkup"}</globalCustomFields>
+      </providers>
+    </encoder>
+  </appender>
+
+ 
+
+  <root level="INFO">
+    <appender-ref ref="CONSOLE"/>
+  </root>
+</configuration>
