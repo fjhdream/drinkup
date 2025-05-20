@@ -1,0 +1,58 @@
+---
+description: Projcet technology stack
+globs: 
+alwaysApply: false
+---
+这个项目的技术栈：
+
+### 核心框架
+- Spring Boot 3.4.4
+- Java 21
+- Spring Modulith (模块化架构)
+- Spring Security (安全框架)
+
+### 数据存储
+- Spring Data JPA (关系型数据库访问)
+- MariaDB (数据库)
+- Redis (缓存和会话管理)
+- Milvus (向量数据库)
+
+### AI 相关
+- Spring AI (AI 框架)
+- 支持多个 AI 模型：
+  - OpenAI
+  - DeepSeek
+  - 智谱 AI (ZhipuAI)
+
+### 消息和任务调度
+- Quartz (任务调度)
+- 阿里云短信服务 (Dysmsapi)
+
+### 云服务集成
+- AWS S3 (对象存储)
+- Spring Cloud AWS
+
+### 开发工具和增强
+- Lombok (简化代码)
+- MapStruct (对象映射)
+- Spring Boot DevTools (开发工具)
+- Docker Compose 支持
+
+### 监控和可观测性
+- Spring Boot Actuator
+- Micrometer + Prometheus (指标监控)
+- OpenTelemetry (分布式追踪)
+- Logstash (日志处理)
+
+### API 文档
+- SpringDoc OpenAPI (API 文档)
+
+### 构建和部署
+- Maven
+- GraalVM Native Image 支持
+- Paketo Buildpacks (容器化构建)
+
+### 测试框架
+- Spring Boot Test
+- Spring Security Test
+- Spring REST Docs (API 文档测试)
