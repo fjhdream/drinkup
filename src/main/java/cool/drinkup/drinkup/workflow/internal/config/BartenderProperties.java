@@ -17,8 +17,24 @@ public class BartenderProperties {
     private Double temperature = 0.8;
     private String server = "openai";
 
+    private RecoverableBartenderProperties recoverable = new RecoverableBartenderProperties();
+    @Data
+    public static class RecoverableBartenderProperties {
+        private String model = "deepseek/deepseek-chat-v3-0324";
+        private Double temperature = 0.8;
+        private String server = "openai";
+    }
+
     @Bean
     public ChatModel bartenderChatModel(OpenAiChatModel openAiChatModel, DeepSeekChatModel deepSeekChatModel) {
+        if ("deepseek".equals(server)) {
+            return deepSeekChatModel;
+        }
+        return openAiChatModel;
+    }
+
+    @Bean
+    public ChatModel bartenderRecoverableChatModel(OpenAiChatModel openAiChatModel, DeepSeekChatModel deepSeekChatModel) {
         if ("deepseek".equals(server)) {
             return deepSeekChatModel;
         }

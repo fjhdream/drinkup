@@ -12,6 +12,9 @@ import org.springframework.ai.openai.api.ResponseFormat;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -22,6 +25,7 @@ import java.util.Map;
 
 import cool.drinkup.drinkup.workflow.internal.config.BartenderProperties;
 import cool.drinkup.drinkup.workflow.internal.controller.req.WorkflowBartenderChatReq.WorkflowBartenderChatVo;
+import cool.drinkup.drinkup.workflow.internal.exception.RetryException;
 import cool.drinkup.drinkup.workflow.internal.service.bartender.dto.BartenderParams;
 import io.micrometer.observation.annotation.Observed;
 import lombok.extern.slf4j.Slf4j;
@@ -31,17 +35,24 @@ import lombok.extern.slf4j.Slf4j;
 public class BartenderService {
 
     private final ChatModel chatModel;
+    private final ChatModel recoverableChatModel;
     private final String promptTemplate;
     private final BartenderProperties bartenderProperties;
 
-    public BartenderService(@Qualifier("bartenderChatModel") ChatModel chatModel, ResourceLoader resourceLoader, BartenderProperties bartenderProperties)
+    public BartenderService(@Qualifier("bartenderChatModel") ChatModel chatModel, @Qualifier("bartenderRecoverableChatModel") ChatModel recoverableChatModel, ResourceLoader resourceLoader, BartenderProperties bartenderProperties)
             throws IOException {
         this.chatModel = chatModel;
+        this.recoverableChatModel = recoverableChatModel;
         Resource promptResource = resourceLoader.getResource("classpath:prompts/bartender-prompt.txt");
         this.promptTemplate = new String(promptResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         this.bartenderProperties = bartenderProperties;
     }
 
+    @Retryable(
+        value = {RuntimeException.class},
+        maxAttempts = 3,
+        backoff = @Backoff(delay = 1000)
+    )
     @Observed(name = "ai.bartender.chat",
         contextualName = "Bartender聊天",
         lowCardinalityKeyValues = {
@@ -63,7 +74,33 @@ public class BartenderService {
             return text;
         } catch (Exception e) {
             log.error("Error generating drink recommendation", e);
-            return "An error occurred while generating a drink recommendation. Please try again later.";
+            throw new RetryException("Error generating drink recommendation");
+        }
+    }
+
+    @Recover
+    @Observed(name = "ai.bartender.chat",
+        contextualName = "Bartender聊天重试",
+        lowCardinalityKeyValues = {
+            "Tag", "ai"
+        })
+    public String generateDrinkRecoverable(RetryException exception, List<WorkflowBartenderChatVo> messages, BartenderParams bartenderParams) {
+        try {
+            var prompt = buildPrompt(messages, bartenderParams);
+            var response = recoverableChatModel.call(prompt);
+            log.info("bartender response: {}", response);
+            
+            if (response.getResult() == null) {
+                log.error("AI response result is null. Response details: {}", response);
+                throw new RuntimeException("AI response result is null");
+            }
+            
+            String text = response.getResult().getOutput().getText();
+            log.info("Chat response: {}", text);
+            return text;
+        } catch (Exception e) {
+            log.error("Error generating drink recommendation", e);
+            throw new RuntimeException("Error generating drink recommendation after retry");
         }
     }
 
