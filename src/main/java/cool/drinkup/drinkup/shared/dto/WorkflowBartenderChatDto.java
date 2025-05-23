@@ -1,16 +1,15 @@
-package cool.drinkup.drinkup.wine.internal.controller.resp;
+package cool.drinkup.drinkup.shared.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-import cool.drinkup.drinkup.wine.spi.WorkflowWineVo;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class WorkflowBartenderChatResp extends WorkflowWineVo {
+public class WorkflowBartenderChatDto extends WorkflowWineVo {
     @JsonAlias("theme_feature_tag")
     private String themeFeatureTag;
     @JsonAlias("theme_story")

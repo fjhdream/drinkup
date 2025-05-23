@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import cool.drinkup.drinkup.shared.dto.WorkflowBartenderChatDto;
 import cool.drinkup.drinkup.wine.spi.WorkflowWineResp;
 import cool.drinkup.drinkup.workflow.internal.controller.req.WorkflowBartenderChatReq;
 import cool.drinkup.drinkup.workflow.internal.controller.req.WorkflowStockRecognitionReq;
@@ -18,7 +19,6 @@ import cool.drinkup.drinkup.workflow.internal.controller.resp.CommonResp;
 import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowStockRecognitionResp;
 import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowUserChatResp;
 import cool.drinkup.drinkup.workflow.internal.service.WorkflowService;
-import cool.drinkup.drinkup.workflow.spi.WorkflowBartenderChatDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

@@ -1,6 +1,5 @@
 package cool.drinkup.drinkup.workflow.internal.service;
 
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -13,6 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import cool.drinkup.drinkup.shared.dto.WorkflowBartenderChatDto;
 import cool.drinkup.drinkup.wine.spi.UserWineServiceFacade;
 import cool.drinkup.drinkup.wine.spi.WineServiceFacade;
 import cool.drinkup.drinkup.wine.spi.WorkflowWineResp;
@@ -36,7 +36,6 @@ import cool.drinkup.drinkup.workflow.internal.service.image.ImageGenerateService
 import cool.drinkup.drinkup.workflow.internal.service.image.ImageRecognitionService;
 import cool.drinkup.drinkup.workflow.internal.service.image.ImageService;
 import cool.drinkup.drinkup.workflow.internal.service.stock.BarStockService;
-import cool.drinkup.drinkup.workflow.spi.WorkflowBartenderChatDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,7 +43,6 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class WorkflowService {
-    private final VectorStore vectorStore;
     private final WineServiceFacade wineServiceFacade;
     private final UserWineServiceFacade userWineServiceFacade;
     private final ChatBotService chatBotService;

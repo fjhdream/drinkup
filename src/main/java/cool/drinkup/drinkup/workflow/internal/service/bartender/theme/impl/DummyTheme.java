@@ -1,11 +1,6 @@
 package cool.drinkup.drinkup.workflow.internal.service.bartender.theme.impl;
 
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 import cool.drinkup.drinkup.workflow.internal.service.bartender.theme.Theme;
 import jakarta.annotation.PostConstruct;
@@ -16,10 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 public class DummyTheme implements Theme {
-
-    private final String name = "dummy";
-
-    private final ResourceLoader resourceLoader;
 
     private String theme;
 

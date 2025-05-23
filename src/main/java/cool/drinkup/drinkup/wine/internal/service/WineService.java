@@ -10,12 +10,12 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import cool.drinkup.drinkup.shared.dto.WorkflowWineVo;
 import cool.drinkup.drinkup.wine.internal.mapper.WineMapper;
 import cool.drinkup.drinkup.wine.internal.model.Wine;
 import cool.drinkup.drinkup.wine.internal.repository.WineRepository;
 import cool.drinkup.drinkup.wine.spi.WineServiceFacade;
 import cool.drinkup.drinkup.wine.spi.WorkflowWineResp;
-import cool.drinkup.drinkup.wine.spi.WorkflowWineVo;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
