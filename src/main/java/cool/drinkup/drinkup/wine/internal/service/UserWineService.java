@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+import cool.drinkup.drinkup.shared.dto.WorkflowBartenderChatDto;
 import cool.drinkup.drinkup.user.spi.AuthenticatedUserDTO;
 import cool.drinkup.drinkup.user.spi.AuthenticationServiceFacade;
 import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowUserWineVo;
@@ -14,7 +15,6 @@ import cool.drinkup.drinkup.wine.internal.mapper.UserWineMapper;
 import cool.drinkup.drinkup.wine.internal.model.UserWine;
 import cool.drinkup.drinkup.wine.internal.repository.UserWineRepository;
 import cool.drinkup.drinkup.wine.spi.UserWineServiceFacade;
-import cool.drinkup.drinkup.workflow.spi.WorkflowBartenderChatDto;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 
