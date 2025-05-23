@@ -7,6 +7,7 @@ import com.aliyun.dysmsapi20170525.Client;
 import com.aliyun.dysmsapi20170525.models.SendSmsRequest;
 import com.aliyun.dysmsapi20170525.models.SendSmsResponse;
 import com.aliyun.teaopenapi.models.Config;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
@@ -74,7 +75,7 @@ public class AliyunSmsSender implements SmsSender {
                 Map<String, String> templateParams;
                 if (message.startsWith("{") && message.endsWith("}")) {
                     // 如果message已经是JSON格式，直接使用
-                    templateParams = objectMapper.readValue(message, Map.class);
+                    templateParams = objectMapper.readValue(message, new TypeReference<Map<String, String>>() {});
                 } else {
                     // 否则，使用默认的code参数
                     templateParams = Map.of("code", message);

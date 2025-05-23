@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import cool.drinkup.drinkup.shared.dto.WorkflowWineVo;
 import cool.drinkup.drinkup.wine.internal.controller.resp.CommonResp;
 import cool.drinkup.drinkup.wine.internal.controller.resp.RandomWineResp;
 import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowUserWineVo;
@@ -22,7 +23,6 @@ import cool.drinkup.drinkup.wine.internal.model.Wine;
 import cool.drinkup.drinkup.wine.internal.rag.DataLoaderService;
 import cool.drinkup.drinkup.wine.internal.service.UserWineService;
 import cool.drinkup.drinkup.wine.internal.service.WineService;
-import cool.drinkup.drinkup.wine.spi.WorkflowWineVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

@@ -14,7 +14,7 @@ import java.net.URI;
 import java.util.UUID;
 
 import cool.drinkup.drinkup.infrastructure.spi.ImageCompressor;
-import cool.drinkup.drinkup.workflow.spi.ImageServiceFacade;
+import cool.drinkup.drinkup.shared.spi.ImageServiceFacade;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;

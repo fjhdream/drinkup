@@ -26,7 +26,6 @@ public class PhilosophyTheme implements Theme {
     @PostConstruct
     public void init() {
         Resource themeResource = resourceLoader.getResource("classpath:themes/" + this.name + ".txt");
-        Resource themeFormulaResource = resourceLoader.getResource("classpath:themes/" + this.name + "_formula.txt");
         try {
             this.theme = new String(themeResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {

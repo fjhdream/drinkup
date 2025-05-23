@@ -1,4 +1,4 @@
-package cool.drinkup.drinkup.wine.spi;
+package cool.drinkup.drinkup.shared.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
