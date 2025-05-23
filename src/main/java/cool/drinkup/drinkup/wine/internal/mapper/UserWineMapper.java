@@ -1,4 +1,4 @@
-package cool.drinkup.drinkup.workflow.internal.mapper;
+package cool.drinkup.drinkup.wine.internal.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -17,11 +17,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 
-import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowBartenderChatResp;
-import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowUserWineVo;
-import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowWineVo;
-import cool.drinkup.drinkup.workflow.internal.model.UserWine;
-import cool.drinkup.drinkup.workflow.internal.service.image.ImageService;
+import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowUserWineVo;
+import cool.drinkup.drinkup.wine.internal.model.UserWine;
+import cool.drinkup.drinkup.wine.spi.WorkflowWineVo;
+import cool.drinkup.drinkup.workflow.spi.ImageServiceFacade;
+import cool.drinkup.drinkup.workflow.spi.WorkflowBartenderChatDto;
 
 @Mapper(componentModel = "spring")
 public abstract class UserWineMapper {
@@ -30,7 +30,7 @@ public abstract class UserWineMapper {
     protected ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     
     @Autowired
-    protected ImageService imageService;
+    protected ImageServiceFacade imageService;
 
     @Mapping(target = "id", ignore = true)
     @Mapping(source = "chatBotResponse.ingredients", target = "ingredients", qualifiedByName = "IngredientListToJsonString")
@@ -38,7 +38,7 @@ public abstract class UserWineMapper {
     @Mapping(source = "chatBotResponse.tagFlavor", target = "tagFlavor", qualifiedByName = "JsonStringListToString")
     @Mapping(source = "chatBotResponse.tagsOthers", target = "tagsOthers", qualifiedByName = "JsonStringListToString")
     @Mapping(source = "userId", target = "userId")
-    public abstract UserWine toUserWine(WorkflowBartenderChatResp chatBotResponse, Long userId);
+    public abstract UserWine toUserWine(WorkflowBartenderChatDto chatBotResponse, Long userId);
 
     @Named("JsonStringListToString")
     protected String jsonToStringList(List<String> json) {
@@ -134,4 +134,4 @@ public abstract class UserWineMapper {
         ZonedDateTime shanghaiTime = date.withZoneSameInstant(ZoneId.of("Asia/Shanghai"));
         return shanghaiTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
-}
+} 

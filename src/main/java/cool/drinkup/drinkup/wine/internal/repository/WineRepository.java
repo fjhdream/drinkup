@@ -1,4 +1,4 @@
-package cool.drinkup.drinkup.workflow.internal.repository;
+package cool.drinkup.drinkup.wine.internal.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import cool.drinkup.drinkup.workflow.internal.model.Wine;
+import cool.drinkup.drinkup.wine.internal.model.Wine;
 
 @Repository
 public interface WineRepository extends JpaRepository<Wine, Long> {
@@ -21,4 +21,7 @@ public interface WineRepository extends JpaRepository<Wine, Long> {
         Pageable pageable);
 
     Page<Wine> findAll(Pageable pageable);
-}
+    
+    @Query(value = "SELECT * FROM wine ORDER BY RAND() LIMIT 1", nativeQuery = true)
+    Wine findRandomWine();
+} 

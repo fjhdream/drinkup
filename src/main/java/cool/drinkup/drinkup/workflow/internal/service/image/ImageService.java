@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.UUID;
 
 import cool.drinkup.drinkup.infrastructure.spi.ImageCompressor;
+import cool.drinkup.drinkup.workflow.spi.ImageServiceFacade;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -21,7 +22,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Slf4j
 @Service
-public class ImageService {
+public class ImageService implements ImageServiceFacade {
 
     private final S3Client s3Client;
     private final ImageCompressor imageCompressor;
