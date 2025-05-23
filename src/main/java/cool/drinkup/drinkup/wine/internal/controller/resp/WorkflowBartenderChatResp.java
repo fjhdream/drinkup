@@ -1,8 +1,9 @@
-package cool.drinkup.drinkup.workflow.internal.controller.resp;
+package cool.drinkup.drinkup.wine.internal.controller.resp;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import cool.drinkup.drinkup.wine.spi.WorkflowWineVo;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -17,4 +18,4 @@ public class WorkflowBartenderChatResp extends WorkflowWineVo {
     private String image;
     @JsonAlias("image_prompt")
     private String imagePrompt;
-}
+} 

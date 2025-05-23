@@ -1,11 +1,10 @@
 package cool.drinkup.drinkup.workflow.internal.service;
 
-import org.springframework.ai.document.Document;
-import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -14,21 +13,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import cool.drinkup.drinkup.infrastructure.spi.ImageGenerator;
+import cool.drinkup.drinkup.wine.spi.UserWineServiceFacade;
+import cool.drinkup.drinkup.wine.spi.WineServiceFacade;
+import cool.drinkup.drinkup.wine.spi.WorkflowWineResp;
 import cool.drinkup.drinkup.workflow.internal.controller.req.WorkflowBartenderChatReq;
 import cool.drinkup.drinkup.workflow.internal.controller.req.WorkflowStockRecognitionReq;
 import cool.drinkup.drinkup.workflow.internal.controller.req.WorkflowUserChatReq;
 import cool.drinkup.drinkup.workflow.internal.controller.req.WorkflowUserReq;
-import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowBartenderChatResp;
 import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowStockRecognitionResp;
 import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowUserChatResp;
-import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowWineResp;
-import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowWineVo;
-import cool.drinkup.drinkup.workflow.internal.mapper.WineMapper;
 import cool.drinkup.drinkup.workflow.internal.model.Bar;
 import cool.drinkup.drinkup.workflow.internal.model.BarStock;
-import cool.drinkup.drinkup.workflow.internal.model.Wine;
-import cool.drinkup.drinkup.workflow.internal.repository.WineRepository;
 import cool.drinkup.drinkup.workflow.internal.service.bar.BarService;
 import cool.drinkup.drinkup.workflow.internal.service.bartender.BartenderService;
 import cool.drinkup.drinkup.workflow.internal.service.bartender.dto.BartenderParams;
@@ -37,21 +32,21 @@ import cool.drinkup.drinkup.workflow.internal.service.bartender.theme.ThemeEnum;
 import cool.drinkup.drinkup.workflow.internal.service.bartender.theme.ThemeFactory;
 import cool.drinkup.drinkup.workflow.internal.service.chat.ChatBotService;
 import cool.drinkup.drinkup.workflow.internal.service.chat.dto.ChatParams;
+import cool.drinkup.drinkup.workflow.internal.service.image.ImageGenerateService;
 import cool.drinkup.drinkup.workflow.internal.service.image.ImageRecognitionService;
 import cool.drinkup.drinkup.workflow.internal.service.image.ImageService;
 import cool.drinkup.drinkup.workflow.internal.service.stock.BarStockService;
+import cool.drinkup.drinkup.workflow.spi.WorkflowBartenderChatDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Flux;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class WorkflowService {
     private final VectorStore vectorStore;
-    private final WineRepository wineRepository;
-    private final WineMapper wineMapper;
-    private final UserWineService userWineService;
+    private final WineServiceFacade wineServiceFacade;
+    private final UserWineServiceFacade userWineServiceFacade;
     private final ChatBotService chatBotService;
     private final BartenderService bartenderService;
     private final BarStockService barStockService;
@@ -60,25 +55,11 @@ public class WorkflowService {
     private final ImageRecognitionService imageRecognitionService;
     private final ImageService imageService;
     private final ThemeFactory themeFactory;
-    private final ImageGenerator imageGenerator;
+    private final ImageGenerateService imageGenerateService;
 
     public WorkflowWineResp processCocktailRequest(WorkflowUserReq userInput) {
         String userInputText = userInput.getUserInput();
-        List<Document> results = vectorStore
-                .similaritySearch(SearchRequest.builder().query(userInputText).topK(10).build());
-        log.info("Results: {}", results);
-        List<Long> wineIds = results.stream()
-                .map(Document::getMetadata)
-                .map(metadata -> (long) Double.parseDouble(metadata.get("wineId").toString()))
-                .collect(Collectors.toList());
-        List<Wine> wines = wineRepository.findAllById(wineIds);
-        log.info("Wines: {}", wines);
-        List<WorkflowWineVo> workflowUserWineVos = wines.stream()
-                .map(wineMapper::toWineVo)
-                .collect(Collectors.toList());
-        WorkflowWineResp workflowUserWIneResp = new WorkflowWineResp();
-        workflowUserWIneResp.setWines(workflowUserWineVos);
-        return workflowUserWIneResp;
+        return wineServiceFacade.processCocktailRequest(userInputText);
     }
 
     public WorkflowUserChatResp chat(WorkflowUserChatReq userInput) {
@@ -93,12 +74,6 @@ public class WorkflowService {
             log.error("Error parsing JSON: {}", e.getMessage());
             return null;
         }
-    }
-
-    public Flux<String> chatStreamFlux(WorkflowUserChatReq userInput) {
-        List<Bar> bars = barService.getUserBarByBarIds(userInput.getBarIds());
-        ChatParams chatParams = buildChatParams(bars, userInput.getImageId());
-        return chatBotService.chatStreamFlux(userInput.getMessages(), chatParams);
     }
 
     private String extractJson(String chatWithUser) {
@@ -119,16 +94,17 @@ public class WorkflowService {
         return chatWithUser;
     }
 
-    public WorkflowBartenderChatResp mixDrink(WorkflowBartenderChatReq bartenderInput) {
+    public WorkflowBartenderChatDto mixDrink(WorkflowBartenderChatReq bartenderInput) {
         var bartenderParam = buildBartenderParams(bartenderInput);
         var chatWithBartender = bartenderService.generateDrink(bartenderInput.getMessages(), bartenderParam);
         var json = extractJson(chatWithBartender);
         try {
-            var chatBotResponse = objectMapper.readValue(json, WorkflowBartenderChatResp.class);
-            String imageUrl = imageGenerator.generateImage(chatBotResponse.getImagePrompt());
+            var chatBotResponse = objectMapper.readValue(json, WorkflowBartenderChatDto.class);
+            String imageUrl = imageGenerateService.generateImage(chatBotResponse.getImagePrompt());
             String imageId = imageService.storeImage(imageUrl);
             chatBotResponse.setImage(imageId);
-            userWineService.saveUserWine(chatBotResponse);
+            // Convert workflow response to wine response for saving
+            userWineServiceFacade.saveUserWine(chatBotResponse);
             chatBotResponse.setImage(imageService.getImageUrl(imageId));
             return chatBotResponse;
         } catch (JsonProcessingException e) {

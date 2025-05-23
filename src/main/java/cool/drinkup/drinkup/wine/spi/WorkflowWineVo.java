@@ -1,4 +1,4 @@
-package cool.drinkup.drinkup.workflow.internal.controller.resp;
+package cool.drinkup.drinkup.wine.spi;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -97,4 +97,4 @@ public class WorkflowWineVo {
             return result;
         }
     }
-}
+} 
