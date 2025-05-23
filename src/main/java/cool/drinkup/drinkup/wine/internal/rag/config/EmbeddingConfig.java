@@ -1,4 +1,4 @@
-package cool.drinkup.drinkup.workflow.internal.service.rag.config;
+package cool.drinkup.drinkup.wine.internal.rag.config;
 
 import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.embedding.BatchingStrategy;

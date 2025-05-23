@@ -1,7 +1,12 @@
-package cool.drinkup.drinkup.workflow.internal.model;
+package cool.drinkup.drinkup.wine.internal.model;
 
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
+
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,13 +18,15 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "wine")
+@Table(name = "user_wine")
 @Getter
 @Setter
-public class Wine {
+public class UserWine {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name = "user_id")
+    private Long userId;
     private String name;
     private String nameEn;
     private String description;
@@ -50,9 +57,16 @@ public class Wine {
     private String tagFlavor;
     private String tagComplexity;
     private String tagAbv;
-    private String tagIba;
     @Column(columnDefinition = "json")
     @JdbcTypeCode(SqlTypes.JSON)
     private String tagsOthers;
     private String image;
-}
+    private String themeStory;
+    private String themeFeatureTag;
+    @CreationTimestamp
+    @Column(name = "create_date", updatable = false, columnDefinition = "DATETIME")
+    private ZonedDateTime createDate = ZonedDateTime.now(ZoneOffset.UTC);
+    @UpdateTimestamp
+    @Column(name = "update_date", columnDefinition = "DATETIME")
+    private ZonedDateTime updateDate = ZonedDateTime.now(ZoneOffset.UTC);
+} 

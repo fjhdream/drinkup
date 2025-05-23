@@ -1,4 +1,4 @@
-package cool.drinkup.drinkup.workflow.internal.mapper;
+package cool.drinkup.drinkup.wine.internal.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -12,10 +12,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collections;
 import java.util.List;
 
-import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowWineVo;
-import cool.drinkup.drinkup.workflow.internal.controller.resp.WorkflowWineVo.Ingredient;
-import cool.drinkup.drinkup.workflow.internal.model.Wine;
-import cool.drinkup.drinkup.workflow.internal.service.image.ImageService;
+import cool.drinkup.drinkup.wine.internal.model.Wine;
+import cool.drinkup.drinkup.wine.spi.WorkflowWineVo;
+import cool.drinkup.drinkup.wine.spi.WorkflowWineVo.Ingredient;
+import cool.drinkup.drinkup.workflow.spi.ImageServiceFacade;
 
 @Mapper(componentModel = "spring")
 public abstract class WineMapper {
@@ -23,7 +23,7 @@ public abstract class WineMapper {
     protected ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     
     @Autowired
-    protected ImageService imageService;
+    protected ImageServiceFacade imageService;
 
     @Mapping(target = "updateDate", ignore = true)
     @Mapping(target = "createDate", ignore = true)
@@ -62,4 +62,4 @@ public abstract class WineMapper {
     protected String imageToUrl(String imageId) {
         return imageService.getImageUrl(imageId);
     }
-}
+} 

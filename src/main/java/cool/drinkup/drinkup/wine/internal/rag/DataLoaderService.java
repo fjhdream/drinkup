@@ -1,4 +1,4 @@
-package cool.drinkup.drinkup.workflow.internal.service.rag;
+package cool.drinkup.drinkup.wine.internal.rag;
 
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -10,8 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 
-import cool.drinkup.drinkup.workflow.internal.model.Wine;
-import cool.drinkup.drinkup.workflow.internal.repository.WineRepository;
+import cool.drinkup.drinkup.wine.internal.model.Wine;
+import cool.drinkup.drinkup.wine.internal.repository.WineRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
