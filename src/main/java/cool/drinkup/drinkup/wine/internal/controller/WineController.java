@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import cool.drinkup.drinkup.shared.dto.WorkflowWineVo;
+import cool.drinkup.drinkup.wine.internal.controller.req.RandomWineTypeEnum;
 import cool.drinkup.drinkup.wine.internal.controller.resp.CommonResp;
 import cool.drinkup.drinkup.wine.internal.controller.resp.RandomWineResp;
 import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowUserWineVo;
@@ -119,14 +120,14 @@ public class WineController {
     })
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommonResp<RandomWineResp>> getRandomWine(@RequestParam String type) {
-        switch (type.toLowerCase()) {
-            case "mixed":
+        switch (RandomWineTypeEnum.valueOf(type.toUpperCase())) {
+            case MIXED:
                 // 完全随机：从 Wine 和 UserWine 中随机选择
                 return getRandomMixedWine();
-            case "user":
+            case USER:
                 // 用户酒库随机：从 UserWine 中随机选择
                 return getRandomUserWine();
-            case "iba":
+            case IBA:
                 // IBA酒单随机：从 Wine 中随机选择
                 return getRandomWine();
             default:
@@ -156,7 +157,7 @@ public class WineController {
                 .body(CommonResp.error("用户酒库为空"));
         }
         WorkflowUserWineVo userWineVo = userWineMapper.toWorkflowUserWineVo(randomUserWine);
-        return ResponseEntity.ok(CommonResp.success(RandomWineResp.builder().type("user").wine(userWineVo).build()));
+        return ResponseEntity.ok(CommonResp.success(RandomWineResp.builder().type(RandomWineTypeEnum.USER.name()).wine(userWineVo).build()));
     }
     
     private ResponseEntity<CommonResp<RandomWineResp>> getRandomWine() {
@@ -166,6 +167,6 @@ public class WineController {
                 .body(CommonResp.error("IBA酒单为空"));
         }
         WorkflowWineVo wineVo = wineMapper.toWineVo(randomWine);
-        return ResponseEntity.ok(CommonResp.success(RandomWineResp.builder().type("iba").wine(wineVo).build()));
+        return ResponseEntity.ok(CommonResp.success(RandomWineResp.builder().type(RandomWineTypeEnum.IBA.name()).wine(wineVo).build()));
     }
 } 
