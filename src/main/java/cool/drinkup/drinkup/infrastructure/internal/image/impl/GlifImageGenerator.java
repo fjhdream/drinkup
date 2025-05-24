@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cool.drinkup.drinkup.infrastructure.internal.image.config.properties.GlifProperties;
 import cool.drinkup.drinkup.infrastructure.internal.image.impl.dto.GlifImageRequest;
 import cool.drinkup.drinkup.infrastructure.spi.ImageGenerator;
-import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,11 +20,6 @@ public class GlifImageGenerator implements ImageGenerator {
     private final GlifProperties properties;
     private final ObjectMapper objectMapper;
 
-    @Observed(name = "image.glif.generate",
-                contextualName = "Glif生成图片",
-            lowCardinalityKeyValues = {
-                "Tag", "image"
-            })
     @Override
     public String generateImage(String prompt) {
         try {

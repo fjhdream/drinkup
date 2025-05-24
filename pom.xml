@@ -28,6 +28,7 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+		<mvnd.builder.rule>smart</mvnd.builder.rule>
 
 		<!-- 构镜用到的属性 -->
 		<spring-boot.build-image.image.name>registry.fjhdream.lol/drinkup:latest</spring-boot.build-image.image.name>
@@ -47,6 +48,7 @@
 		<hibernate-types.version>2.21.1</hibernate-types.version>
 		<logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
 		<opentelemetry.logback-appender.version>2.15.0-alpha</opentelemetry.logback-appender.version>
+		<fal-client.version>0.7.1</fal-client.version>
 	</properties>
 	<dependencies>
 		<!-- Actuator + Prometheus 指标 -->
@@ -112,10 +114,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webflux</artifactId>
-		</dependency>
+		
 		<dependency>
 			<groupId>org.springframework.session</groupId>
 			<artifactId>spring-session-data-redis</artifactId>
@@ -134,6 +133,11 @@
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-starter-vector-store-milvus</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>ai.fal.client</groupId>
+			<artifactId>fal-client</artifactId>
+			<version>${fal-client.version}</version>
+		  </dependency>
 	
 
 		<dependency>
