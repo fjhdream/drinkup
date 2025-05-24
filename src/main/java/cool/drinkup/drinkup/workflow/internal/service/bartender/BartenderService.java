@@ -10,24 +10,25 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.ResponseFormat;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import cool.drinkup.drinkup.workflow.internal.config.BartenderProperties;
 import cool.drinkup.drinkup.workflow.internal.controller.req.WorkflowBartenderChatReq.WorkflowBartenderChatVo;
+import cool.drinkup.drinkup.workflow.internal.enums.PromptTypeEnum;
 import cool.drinkup.drinkup.workflow.internal.exception.RetryException;
+import cool.drinkup.drinkup.workflow.internal.model.PromptContent;
+import cool.drinkup.drinkup.workflow.internal.repository.PromptRepository;
 import cool.drinkup.drinkup.workflow.internal.service.bartender.dto.BartenderParams;
 import io.micrometer.observation.annotation.Observed;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -36,16 +37,25 @@ public class BartenderService {
 
     private final ChatModel chatModel;
     private final ChatModel recoverableChatModel;
-    private final String promptTemplate;
+    private String promptTemplate;
     private final BartenderProperties bartenderProperties;
-
-    public BartenderService(@Qualifier("bartenderChatModel") ChatModel chatModel, @Qualifier("bartenderRecoverableChatModel") ChatModel recoverableChatModel, ResourceLoader resourceLoader, BartenderProperties bartenderProperties)
+    private final PromptRepository promptRepository;
+    public BartenderService(@Qualifier("bartenderChatModel") ChatModel chatModel, @Qualifier("bartenderRecoverableChatModel") ChatModel recoverableChatModel,
+        BartenderProperties bartenderProperties, PromptRepository promptRepository)
             throws IOException {
         this.chatModel = chatModel;
         this.recoverableChatModel = recoverableChatModel;
-        Resource promptResource = resourceLoader.getResource("classpath:prompts/bartender-prompt.txt");
-        this.promptTemplate = new String(promptResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         this.bartenderProperties = bartenderProperties;
+        this.promptRepository = promptRepository;
+    }
+
+    @PostConstruct
+    public void init() {
+        PromptContent prompt = promptRepository.findByType(PromptTypeEnum.BARTENDER.name());
+        if (prompt == null) {
+            return;
+        }
+        this.promptTemplate = prompt.getSystemPrompt(); 
     }
 
     @Retryable(

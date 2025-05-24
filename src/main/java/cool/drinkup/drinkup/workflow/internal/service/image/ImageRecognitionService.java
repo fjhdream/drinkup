@@ -11,22 +11,23 @@ import org.springframework.ai.content.Media;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 import cool.drinkup.drinkup.workflow.internal.controller.req.BarStockCreateReq;
 import cool.drinkup.drinkup.workflow.internal.controller.req.BarStockCreateReq.InnerBarStockCreateReq;
+import cool.drinkup.drinkup.workflow.internal.enums.PromptTypeEnum;
 import cool.drinkup.drinkup.workflow.internal.model.BarStock;
+import cool.drinkup.drinkup.workflow.internal.model.PromptContent;
+import cool.drinkup.drinkup.workflow.internal.repository.PromptRepository;
 import cool.drinkup.drinkup.workflow.internal.util.ContentTypeUtil;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -37,27 +38,28 @@ public class ImageRecognitionService {
     private final ObjectMapper objectMapper;
     private final ImageService imageService;
     private final ContentTypeUtil contentTypeUtil;
+    private final PromptRepository promptRepository;
     private String promptTemplate;
 
     @Value("${drinkup.image.recognition.model:google/gemini-2.0-flash-001}")
     private String model;
 
-    public ImageRecognitionService(ResourceLoader resourceLoader, @Qualifier("openAiChatModel") ChatModel chatModel,
-            ObjectMapper objectMapper, ImageService imageService, ContentTypeUtil contentTypeUtil) {
+    public ImageRecognitionService(@Qualifier("openAiChatModel") ChatModel chatModel,
+            ObjectMapper objectMapper, ImageService imageService, ContentTypeUtil contentTypeUtil, PromptRepository promptRepository) {
         this.chatModel = chatModel;
         this.objectMapper = objectMapper;
         this.imageService = imageService;
         this.contentTypeUtil = contentTypeUtil;
-        try {
-            Resource promptResource = resourceLoader.getResource("classpath:prompts/image-recognition-prompt.txt");
-            this.promptTemplate = new String(promptResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            log.error("Error loading image recognition prompt template", e);
-            this.promptTemplate = "You are an AI assistant that recognizes alcoholic beverages and bar ingredients from images. "
-                    +
-                    "Identify all visible bottles, ingredients, and bar items in the image. " +
-                    "For each item, provide the name, type (spirit, liqueur, mixer, etc.), and a brief description.";
+        this.promptRepository = promptRepository;
+    }
+
+    @PostConstruct
+    public void init() {
+        PromptContent prompt = promptRepository.findByType(PromptTypeEnum.IMAGE_RECOGNITION.name());
+        if (prompt == null) {
+            return; 
         }
+        this.promptTemplate = prompt.getSystemPrompt();
     }
 
     public List<BarStock> recognizeStockFromImage(String imageId) {

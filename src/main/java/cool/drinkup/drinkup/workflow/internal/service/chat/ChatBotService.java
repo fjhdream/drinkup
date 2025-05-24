@@ -12,12 +12,10 @@ import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.ResponseFormat;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -26,10 +24,14 @@ import java.util.stream.Collectors;
 
 import cool.drinkup.drinkup.workflow.internal.config.ChatBotProperties;
 import cool.drinkup.drinkup.workflow.internal.controller.req.WorkflowUserChatReq.WorkflowUserChatVo;
+import cool.drinkup.drinkup.workflow.internal.enums.PromptTypeEnum;
+import cool.drinkup.drinkup.workflow.internal.model.PromptContent;
+import cool.drinkup.drinkup.workflow.internal.repository.PromptRepository;
 import cool.drinkup.drinkup.workflow.internal.service.chat.dto.ChatParams;
 import cool.drinkup.drinkup.workflow.internal.service.image.ImageService;
 import cool.drinkup.drinkup.workflow.internal.util.ContentTypeUtil;
 import io.micrometer.observation.annotation.Observed;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 
@@ -38,19 +40,28 @@ import reactor.core.publisher.Flux;
 public class ChatBotService {
 
     private final ChatModel chatModel;
-    private final String promptTemplate;
     private final ImageService imageService;
     private final ContentTypeUtil contentTypeUtil;
     private final ChatBotProperties chatBotProperties;
+    private final PromptRepository promptRepository;
+    private String promptTemplate;
 
-    public ChatBotService(@Qualifier("chatBotModel") ChatModel chatModel, ResourceLoader resourceLoader, 
-    ImageService imageService, ContentTypeUtil contentTypeUtil, ChatBotProperties chatBotProperties) throws IOException {
+    public ChatBotService(@Qualifier("chatBotModel") ChatModel chatModel, ImageService imageService, 
+        ContentTypeUtil contentTypeUtil, ChatBotProperties chatBotProperties, PromptRepository promptRepository) {
         this.chatModel = chatModel;
-        Resource promptResource = resourceLoader.getResource("classpath:prompts/chat-prompt.txt");
-        this.promptTemplate = new String(promptResource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         this.imageService = imageService;
         this.contentTypeUtil = contentTypeUtil;
         this.chatBotProperties = chatBotProperties;
+        this.promptRepository = promptRepository;
+    }
+
+    @PostConstruct
+    public void init() {
+        PromptContent prompt = promptRepository.findByType(PromptTypeEnum.CHAT.name());
+        if (prompt == null) {
+            return;
+        }
+        this.promptTemplate = prompt.getSystemPrompt(); 
     }
 
     @Observed(name = "ai.chat",
