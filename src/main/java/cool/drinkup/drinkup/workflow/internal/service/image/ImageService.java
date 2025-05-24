@@ -33,6 +33,9 @@ public class ImageService implements ImageServiceFacade {
     @Value("${drinkup.image.save.s3.url:https://img.fjhdream.lol/}")
     private String imageUrl;
 
+    @Value("${drinkup.image.save.s3.internal.url:https://img.fjhdream.lol/}")
+    private String imageInternalUrl;
+
     @Value("${drinkup.image.save.s3.bucket:object-bucket}")
     private String bucket;
     
@@ -176,7 +179,7 @@ public class ImageService implements ImageServiceFacade {
     }
 
     public Resource loadImage(String imageId) {
-        String imageUrl = getImageUrl(imageId);
+        String imageUrl = getInternalImageUrl(imageId);
         String compressedImageUrl = imageCompressor.compress(imageUrl);
         try {
             byte[] imageBytes = downloadImageWithRetry(compressedImageUrl);
@@ -193,5 +196,12 @@ public class ImageService implements ImageServiceFacade {
             return null;
         }
         return imageUrl + prefix + imageId;
+    }
+
+    private String getInternalImageUrl(String imageId) {
+        if (!StringUtils.hasText(imageId)) {
+            return null;
+        }
+        return imageInternalUrl + prefix + imageId;
     }
 }
