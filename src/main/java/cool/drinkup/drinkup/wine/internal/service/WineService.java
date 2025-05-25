@@ -43,6 +43,11 @@ public class WineService implements WineServiceFacade {
     public @Nullable Wine getRandomWine() {
         return wineRepository.findRandomWine();
     }
+    
+    @Override
+    public List<Wine> getRandomWines(int count) {
+        return wineRepository.findRandomWines(count);
+    }
 
     @Override
     public WorkflowWineResp processCocktailRequest(String userInput) {

@@ -5,6 +5,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 import cool.drinkup.drinkup.shared.dto.WorkflowBartenderChatDto;
@@ -58,6 +59,17 @@ public class UserWineService implements UserWineServiceFacade {
         AuthenticatedUserDTO authenticatedUserDTO = currentAuthenticatedUser.get();
         Long userId = authenticatedUserDTO.userId();
         return userWineRepository.findRandomUserWine(userId);
+    }
+    
+    @Override
+    public List<UserWine> getRandomUserWines(int count) {
+        Optional<AuthenticatedUserDTO> currentAuthenticatedUser = authenticationServiceFacade.getCurrentAuthenticatedUser();
+        if (currentAuthenticatedUser.isEmpty()) {
+            throw new IllegalStateException("Expected authenticated user but got none");
+        }
+        AuthenticatedUserDTO authenticatedUserDTO = currentAuthenticatedUser.get();
+        Long userId = authenticatedUserDTO.userId();
+        return userWineRepository.findRandomUserWines(userId, count);
     }
 
     @Override
