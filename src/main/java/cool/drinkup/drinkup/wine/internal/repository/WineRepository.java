@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 import cool.drinkup.drinkup.wine.internal.model.Wine;
 
 @Repository
@@ -24,4 +26,7 @@ public interface WineRepository extends JpaRepository<Wine, Long> {
     
     @Query(value = "SELECT * FROM wine ORDER BY RAND() LIMIT 1", nativeQuery = true)
     Wine findRandomWine();
+    
+    @Query(value = "SELECT * FROM wine ORDER BY RAND() LIMIT :count", nativeQuery = true)
+    List<Wine> findRandomWines(@Param("count") int count);
 } 
