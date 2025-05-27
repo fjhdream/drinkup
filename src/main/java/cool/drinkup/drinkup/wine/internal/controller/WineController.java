@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import cool.drinkup.drinkup.shared.dto.WorkflowWineVo;
-import cool.drinkup.drinkup.wine.internal.controller.resp.CommonResp;
+import cool.drinkup.drinkup.shared.spi.CommonResp;
 import cool.drinkup.drinkup.wine.internal.controller.resp.RandomWineResp;
 import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowUserWineVo;
 import cool.drinkup.drinkup.wine.internal.mapper.UserWineMapper;

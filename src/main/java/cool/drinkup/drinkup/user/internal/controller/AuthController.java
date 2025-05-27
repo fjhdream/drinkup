@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.stream.Collectors;
 
 import cool.drinkup.drinkup.infrastructure.spi.SmsSender;
+import cool.drinkup.drinkup.shared.spi.CommonResp;
 import cool.drinkup.drinkup.user.internal.controller.req.LoginRequest;
 import cool.drinkup.drinkup.user.internal.controller.req.PhoneNumberRequest;
-import cool.drinkup.drinkup.user.internal.controller.resp.CommonResp;
 import cool.drinkup.drinkup.user.internal.controller.resp.LogoutResp;
 import cool.drinkup.drinkup.user.internal.controller.resp.UserLoginResp;
 import cool.drinkup.drinkup.user.internal.mapper.UserMapper;

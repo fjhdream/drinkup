@@ -8,12 +8,14 @@ import org.hibernate.type.SqlTypes;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
+import cool.drinkup.drinkup.favorite.spi.FavoriteType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,7 +23,7 @@ import lombok.Setter;
 @Table(name = "user_wine")
 @Getter
 @Setter
-public class UserWine {
+public class UserWine implements cool.drinkup.drinkup.favorite.spi.UserWine {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -69,4 +71,10 @@ public class UserWine {
     @UpdateTimestamp
     @Column(name = "update_date", columnDefinition = "DATETIME")
     private ZonedDateTime updateDate = ZonedDateTime.now(ZoneOffset.UTC);
+
+    @Column(name = "favorite_count", columnDefinition = "INT DEFAULT 0")
+    private Integer favoriteCount = 0;
+
+    @Transient
+    private FavoriteType favoriteType = FavoriteType.USER_WINE;
 } 

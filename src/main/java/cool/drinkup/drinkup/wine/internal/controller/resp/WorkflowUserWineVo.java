@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import cool.drinkup.drinkup.favorite.spi.FavoriteType;
 import lombok.Data;
 
 @Data
@@ -68,6 +69,8 @@ public class WorkflowUserWineVo {
     private String createDate;
     @JsonAlias("update_date")
     private String updateDate;
+    private Integer favoriteCount;
+    private FavoriteType favoriteType;
 
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)

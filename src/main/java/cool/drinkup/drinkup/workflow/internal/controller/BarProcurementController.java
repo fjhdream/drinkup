@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+import cool.drinkup.drinkup.shared.spi.CommonResp;
 import cool.drinkup.drinkup.workflow.internal.controller.req.BarProcurementCreateReq;
 import cool.drinkup.drinkup.workflow.internal.controller.req.BarProcurementUpdateReq;
-import cool.drinkup.drinkup.workflow.internal.controller.resp.CommonResp;
 import cool.drinkup.drinkup.workflow.internal.model.BarProcurement;
 import cool.drinkup.drinkup.workflow.internal.service.procurement.BarProcurementService;
 import io.swagger.v3.oas.annotations.Operation;
