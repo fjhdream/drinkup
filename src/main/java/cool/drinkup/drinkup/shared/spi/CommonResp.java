@@ -1,4 +1,4 @@
-package cool.drinkup.drinkup.workflow.internal.controller.resp;
+package cool.drinkup.drinkup.shared.spi;
 
 import lombok.Data;
 
@@ -21,4 +21,4 @@ public class CommonResp<T> {
         resp.setCode(-1);
         return resp;
     }
-}
+} 

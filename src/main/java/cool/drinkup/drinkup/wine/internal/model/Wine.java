@@ -3,12 +3,14 @@ package cool.drinkup.drinkup.wine.internal.model;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import cool.drinkup.drinkup.favorite.spi.FavoriteType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,7 +18,7 @@ import lombok.Setter;
 @Table(name = "wine")
 @Getter
 @Setter
-public class Wine {
+public class Wine implements cool.drinkup.drinkup.favorite.spi.Wine {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -55,4 +57,10 @@ public class Wine {
     @JdbcTypeCode(SqlTypes.JSON)
     private String tagsOthers;
     private String image;
+    
+    @Column(name = "favorite_count", columnDefinition = "INT DEFAULT 0")
+    private Integer favoriteCount = 0;
+
+    @Transient
+    private FavoriteType favoriteType = FavoriteType.WINE;
 } 

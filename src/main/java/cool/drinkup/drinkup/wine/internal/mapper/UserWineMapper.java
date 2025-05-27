@@ -61,16 +61,6 @@ public abstract class UserWineMapper {
         }
     }
 
-    @Mapping(source = "ingredients", target = "ingredients", qualifiedByName = "jsonToWineIngredientsList")
-    @Mapping(source = "tagBaseSpirit", target = "tagBaseSpirit", qualifiedByName = "jsonToStringList")
-    @Mapping(source = "tagFlavor", target = "tagFlavor", qualifiedByName = "jsonToStringList")
-    @Mapping(source = "tagsOthers", target = "tagsOthers", qualifiedByName = "jsonToStringList")
-    @Mapping(source = "image", target = "image", qualifiedByName = "imageToUrl")
-    @Mapping(source = "createDate", target = "createDate", qualifiedByName = "dateToString")
-    @Mapping(source = "updateDate", target = "updateDate", qualifiedByName = "dateToString")
-    @Mapping(target = "tagIba", ignore = true)
-    public abstract WorkflowWineVo toUserWineVo(UserWine userWine);
-
     @Mapping(source = "ingredients", target = "ingredients", qualifiedByName = "jsonToUserWineIngredientsList")
     @Mapping(source = "tagBaseSpirit", target = "tagBaseSpirit", qualifiedByName = "jsonToStringList")
     @Mapping(source = "tagFlavor", target = "tagFlavor", qualifiedByName = "jsonToStringList")
@@ -78,6 +68,7 @@ public abstract class UserWineMapper {
     @Mapping(source = "image", target = "image", qualifiedByName = "imageToUrl")
     @Mapping(source = "createDate", target = "createDate", qualifiedByName = "dateToString")
     @Mapping(source = "updateDate", target = "updateDate", qualifiedByName = "dateToString")
+    @Mapping(target = "favoriteType", expression = "java(cool.drinkup.drinkup.favorite.spi.FavoriteType.USER_WINE)")
     public abstract WorkflowUserWineVo toWorkflowUserWineVo(UserWine userWine);
 
     @Named("jsonToWineIngredientsList")
