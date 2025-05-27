@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Optional;
 
+import cool.drinkup.drinkup.shared.spi.CommonResp;
 import cool.drinkup.drinkup.user.spi.AuthenticatedUserDTO;
 import cool.drinkup.drinkup.user.spi.AuthenticationServiceFacade;
 import cool.drinkup.drinkup.workflow.internal.controller.req.BarCreateReq;
 import cool.drinkup.drinkup.workflow.internal.controller.req.BarUpdateReq;
-import cool.drinkup.drinkup.workflow.internal.controller.resp.CommonResp;
 import cool.drinkup.drinkup.workflow.internal.model.Bar;
 import cool.drinkup.drinkup.workflow.internal.service.bar.BarService;
 import io.swagger.v3.oas.annotations.Operation;

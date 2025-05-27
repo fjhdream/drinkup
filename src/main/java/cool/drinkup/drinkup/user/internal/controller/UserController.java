@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 import java.util.Optional;
 
+import cool.drinkup.drinkup.shared.spi.CommonResp;
 import cool.drinkup.drinkup.user.internal.controller.req.UpdateProfileRequest;
-import cool.drinkup.drinkup.user.internal.controller.resp.CommonResp;
 import cool.drinkup.drinkup.user.internal.controller.resp.UserProfileResp;
 import cool.drinkup.drinkup.user.internal.mapper.UserMapper;
 import cool.drinkup.drinkup.user.internal.model.User;

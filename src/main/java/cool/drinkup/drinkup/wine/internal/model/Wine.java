@@ -16,7 +16,7 @@ import lombok.Setter;
 @Table(name = "wine")
 @Getter
 @Setter
-public class Wine {
+public class Wine implements cool.drinkup.drinkup.favorite.spi.Wine {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -55,4 +55,7 @@ public class Wine {
     @JdbcTypeCode(SqlTypes.JSON)
     private String tagsOthers;
     private String image;
+    
+    @Column(name = "favorite_count", columnDefinition = "INT DEFAULT 0")
+    private Integer favoriteCount = 0;
 } 

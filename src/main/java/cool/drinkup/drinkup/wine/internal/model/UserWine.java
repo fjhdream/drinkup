@@ -21,7 +21,7 @@ import lombok.Setter;
 @Table(name = "user_wine")
 @Getter
 @Setter
-public class UserWine {
+public class UserWine implements cool.drinkup.drinkup.favorite.spi.UserWine {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -69,4 +69,7 @@ public class UserWine {
     @UpdateTimestamp
     @Column(name = "update_date", columnDefinition = "DATETIME")
     private ZonedDateTime updateDate = ZonedDateTime.now(ZoneOffset.UTC);
+
+    @Column(name = "favorite_count", columnDefinition = "INT DEFAULT 0")
+    private Integer favoriteCount = 0;
 } 

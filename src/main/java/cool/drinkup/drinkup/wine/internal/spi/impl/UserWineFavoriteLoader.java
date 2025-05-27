@@ -1,0 +1,45 @@
+package cool.drinkup.drinkup.wine.internal.spi.impl;
+
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import cool.drinkup.drinkup.favorite.spi.FavoriteObjectLoader;
+import cool.drinkup.drinkup.favorite.spi.FavoriteType;
+import cool.drinkup.drinkup.favorite.spi.UserWine;
+import cool.drinkup.drinkup.wine.internal.repository.UserWineRepository;
+import lombok.RequiredArgsConstructor;
+
+@Component
+@RequiredArgsConstructor
+public class UserWineFavoriteLoader implements FavoriteObjectLoader<UserWine> {
+    
+    private final UserWineRepository userWineRepository;
+    
+    @Override
+    public Map<Long, UserWine> loadObjects(List<Long> objectIds) {
+        return userWineRepository.findAllById(objectIds).stream()
+                .collect(Collectors.toMap(UserWine::getId, userWine -> userWine));
+    }
+    
+    @Override
+    public boolean validateObject(Long objectId) {
+        return userWineRepository.existsById(objectId);
+    }
+    
+    @Override
+    public void afterFavorite(Long objectId, boolean isFavorite) {
+        // 更新收藏计数
+        userWineRepository.findById(objectId).ifPresent(wine -> {
+            wine.setFavoriteCount(wine.getFavoriteCount() + (isFavorite ? 1 : -1));
+            userWineRepository.save(wine);
+        });
+    }
+
+    @Override
+    public FavoriteType getFavoriteType() {
+        return FavoriteType.USER_WINE;
+    }
+} 

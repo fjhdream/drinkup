@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import cool.drinkup.drinkup.workflow.internal.controller.resp.CommonResp;
+import cool.drinkup.drinkup.shared.spi.CommonResp;
 import cool.drinkup.drinkup.workflow.internal.controller.resp.ImageUploadResp;
 import cool.drinkup.drinkup.workflow.internal.service.image.ImageService;
 import io.swagger.v3.oas.annotations.Operation;
