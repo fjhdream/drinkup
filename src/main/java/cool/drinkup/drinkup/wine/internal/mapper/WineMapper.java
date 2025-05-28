@@ -11,8 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collections;
 import java.util.List;
 
-import cool.drinkup.drinkup.shared.dto.WorkflowWineVo;
-import cool.drinkup.drinkup.shared.dto.WorkflowWineVo.Ingredient;
+import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowWineVo;
+import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowWineVo.Ingredient;
 import cool.drinkup.drinkup.wine.internal.model.Wine;
 
 @Mapper(componentModel = "spring", uses = ImageServiceMapper.class)

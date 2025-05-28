@@ -23,7 +23,7 @@ import lombok.Setter;
 @Table(name = "user_wine")
 @Getter
 @Setter
-public class UserWine implements cool.drinkup.drinkup.favorite.spi.UserWine {
+public class UserWine implements cool.drinkup.drinkup.shared.dto.UserWine {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -77,4 +77,9 @@ public class UserWine implements cool.drinkup.drinkup.favorite.spi.UserWine {
 
     @Transient
     private FavoriteType favoriteType = FavoriteType.USER_WINE;
+
+    @Override
+    public String getId() {
+        return id.toString();
+    }
 } 

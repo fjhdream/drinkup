@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.List;
 
 import cool.drinkup.drinkup.shared.dto.WorkflowBartenderChatDto;
-import cool.drinkup.drinkup.shared.dto.WorkflowWineVo;
 import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowUserWineVo;
 import cool.drinkup.drinkup.wine.internal.model.UserWine;
 
@@ -33,6 +32,10 @@ public abstract class UserWineMapper {
     @Mapping(source = "chatBotResponse.tagFlavor", target = "tagFlavor", qualifiedByName = "JsonStringListToString")
     @Mapping(source = "chatBotResponse.tagsOthers", target = "tagsOthers", qualifiedByName = "JsonStringListToString")
     @Mapping(source = "userId", target = "userId")
+    @Mapping(target = "createDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
+    @Mapping(target = "favoriteCount", constant = "0")
+    @Mapping(target = "favoriteType", ignore = true)
     public abstract UserWine toUserWine(WorkflowBartenderChatDto chatBotResponse, Long userId);
 
     @Named("JsonStringListToString")
@@ -49,7 +52,7 @@ public abstract class UserWineMapper {
     }
 
     @Named("IngredientListToJsonString")
-    protected String ingredientListToJsonString(List<WorkflowWineVo.Ingredient> ingredients) {
+    protected String ingredientListToJsonString(List<WorkflowBartenderChatDto.Ingredient> ingredients) {
         if (ingredients == null || ingredients.isEmpty()) {
             return null;
         }
@@ -72,12 +75,12 @@ public abstract class UserWineMapper {
     public abstract WorkflowUserWineVo toWorkflowUserWineVo(UserWine userWine);
 
     @Named("jsonToWineIngredientsList")
-    protected List<WorkflowWineVo.Ingredient> jsonToWineIngredientsList(String json) {
+    protected List<WorkflowBartenderChatDto.Ingredient> jsonToWineIngredientsList(String json) {
         if (json == null || json.isEmpty()) {
             return Collections.emptyList();
         }
         try {
-            return OBJECT_MAPPER.readValue(json, new TypeReference<List<WorkflowWineVo.Ingredient>>() {});
+            return OBJECT_MAPPER.readValue(json, new TypeReference<List<WorkflowBartenderChatDto.Ingredient>>() {});
         } catch (JsonProcessingException e) {
             return Collections.emptyList();
         }

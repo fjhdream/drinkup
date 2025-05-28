@@ -28,7 +28,7 @@ public class UserWineService implements UserWineServiceFacade {
 
     @Override
     @Transactional
-    public void saveUserWine(WorkflowBartenderChatDto chatBotResponse) {
+    public UserWine saveUserWine(WorkflowBartenderChatDto chatBotResponse) {
         Optional<AuthenticatedUserDTO> currentAuthenticatedUser = authenticationServiceFacade.getCurrentAuthenticatedUser();
         if (currentAuthenticatedUser.isEmpty()) {
             throw new IllegalStateException("Expected authenticated user but got none");
@@ -36,10 +36,9 @@ public class UserWineService implements UserWineServiceFacade {
         AuthenticatedUserDTO authenticatedUserDTO = currentAuthenticatedUser.get();
         Long userId = authenticatedUserDTO.userId();
         var userWine = userWineMapper.toUserWine(chatBotResponse, userId);
-        userWineRepository.save(userWine);
+        return userWineRepository.save(userWine);
     }
 
-    @Override
     public Page<UserWine> getUserWine(PageRequest pageRequest) {
         Optional<AuthenticatedUserDTO> currentAuthenticatedUser = authenticationServiceFacade.getCurrentAuthenticatedUser();
         if (currentAuthenticatedUser.isEmpty()) {
@@ -49,8 +48,6 @@ public class UserWineService implements UserWineServiceFacade {
         Long userId = authenticatedUserDTO.userId();
         return userWineRepository.findByUserId(userId, pageRequest);
     }
-
-    @Override
     public @Nullable UserWine getRandomUserWine() {
         Optional<AuthenticatedUserDTO> currentAuthenticatedUser = authenticationServiceFacade.getCurrentAuthenticatedUser();
         if (currentAuthenticatedUser.isEmpty()) {
@@ -60,8 +57,7 @@ public class UserWineService implements UserWineServiceFacade {
         Long userId = authenticatedUserDTO.userId();
         return userWineRepository.findRandomUserWine(userId);
     }
-    
-    @Override
+
     public List<UserWine> getRandomUserWines(int count) {
         Optional<AuthenticatedUserDTO> currentAuthenticatedUser = authenticationServiceFacade.getCurrentAuthenticatedUser();
         if (currentAuthenticatedUser.isEmpty()) {
@@ -72,7 +68,6 @@ public class UserWineService implements UserWineServiceFacade {
         return userWineRepository.findRandomUserWines(userId, count);
     }
 
-    @Override
     public WorkflowUserWineVo toWorkflowUserWineVo(UserWine userWine) {
         return userWineMapper.toWorkflowUserWineVo(userWine);
     }
