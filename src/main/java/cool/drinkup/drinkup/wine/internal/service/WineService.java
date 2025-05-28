@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import cool.drinkup.drinkup.shared.dto.WorkflowWineVo;
+import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowWineVo;
 import cool.drinkup.drinkup.wine.internal.mapper.WineMapper;
 import cool.drinkup.drinkup.wine.internal.model.Wine;
 import cool.drinkup.drinkup.wine.internal.repository.WineRepository;

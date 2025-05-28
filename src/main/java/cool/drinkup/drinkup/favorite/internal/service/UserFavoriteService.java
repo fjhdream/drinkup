@@ -23,8 +23,8 @@ import cool.drinkup.drinkup.favorite.internal.entity.UserFavorite;
 import cool.drinkup.drinkup.favorite.internal.repository.UserFavoriteRepository;
 import cool.drinkup.drinkup.favorite.spi.FavoriteObjectLoader;
 import cool.drinkup.drinkup.favorite.spi.FavoriteType;
-import cool.drinkup.drinkup.favorite.spi.UserWine;
-import cool.drinkup.drinkup.favorite.spi.Wine;
+import cool.drinkup.drinkup.shared.dto.UserWine;
+import cool.drinkup.drinkup.shared.dto.Wine;
 import lombok.extern.slf4j.Slf4j;
 
 @Service

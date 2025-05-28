@@ -1,4 +1,4 @@
-package cool.drinkup.drinkup.shared.dto;
+package cool.drinkup.drinkup.wine.internal.controller.resp;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -17,7 +17,7 @@ import lombok.Data;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class WorkflowWineVo {
+public class WorkflowWineVo implements cool.drinkup.drinkup.shared.dto.Wine {
     private String id;
     private String name;
     @JsonAlias("name_en")

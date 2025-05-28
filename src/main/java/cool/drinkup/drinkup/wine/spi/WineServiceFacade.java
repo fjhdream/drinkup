@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
-import cool.drinkup.drinkup.shared.dto.WorkflowWineVo;
+import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowWineVo;
 import cool.drinkup.drinkup.wine.internal.model.Wine;
 import jakarta.annotation.Nullable;
 

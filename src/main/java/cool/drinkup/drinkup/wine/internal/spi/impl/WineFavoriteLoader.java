@@ -8,7 +8,8 @@ import java.util.stream.Collectors;
 
 import cool.drinkup.drinkup.favorite.spi.FavoriteObjectLoader;
 import cool.drinkup.drinkup.favorite.spi.FavoriteType;
-import cool.drinkup.drinkup.wine.internal.model.Wine;
+import cool.drinkup.drinkup.shared.dto.Wine;
+import cool.drinkup.drinkup.wine.internal.mapper.WineMapper;
 import cool.drinkup.drinkup.wine.internal.repository.WineRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -17,11 +18,15 @@ import lombok.RequiredArgsConstructor;
 public class WineFavoriteLoader implements FavoriteObjectLoader<Wine> {
     
     private final WineRepository wineRepository;
-    
+    private final WineMapper wineMapper;
     @Override
     public Map<Long, Wine> loadObjects(List<Long> objectIds) {
         return wineRepository.findAllById(objectIds).stream()
-                .collect(Collectors.toMap(Wine::getId, wine -> wine));
+                .map(wineMapper::toWineVo)
+                .collect(Collectors.toMap(
+                    wine -> Long.parseLong(wine.getId()),
+                    wine -> wine
+                ));
     }
     
     @Override

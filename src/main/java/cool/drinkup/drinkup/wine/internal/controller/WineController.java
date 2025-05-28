@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import cool.drinkup.drinkup.shared.dto.WorkflowWineVo;
 import cool.drinkup.drinkup.shared.spi.CommonResp;
 import cool.drinkup.drinkup.wine.internal.controller.resp.RandomWineResp;
 import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowUserWineVo;
+import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowWineVo;
 import cool.drinkup.drinkup.wine.internal.mapper.UserWineMapper;
 import cool.drinkup.drinkup.wine.internal.mapper.WineMapper;
 import cool.drinkup.drinkup.wine.internal.model.UserWine;
