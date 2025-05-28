@@ -2,7 +2,7 @@ package cool.drinkup.drinkup.wine.spi;
 
 import java.util.List;
 
-import cool.drinkup.drinkup.shared.dto.WorkflowWineVo;
+import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowWineVo;
 import lombok.Data;
 
 @Data

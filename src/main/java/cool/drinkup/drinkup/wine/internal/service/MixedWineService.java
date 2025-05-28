@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import cool.drinkup.drinkup.shared.dto.WorkflowWineVo;
 import cool.drinkup.drinkup.wine.internal.controller.req.RandomWineTypeEnum;
 import cool.drinkup.drinkup.wine.internal.controller.resp.RandomWineResp;
 import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowUserWineVo;
+import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowWineVo;
 import cool.drinkup.drinkup.wine.internal.mapper.UserWineMapper;
 import cool.drinkup.drinkup.wine.internal.mapper.WineMapper;
 import cool.drinkup.drinkup.wine.internal.model.UserWine;
