@@ -1,0 +1,427 @@
+name: Manual Build and Publish Multi-Arch Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: '要构建的分支或标签 (例如: master, v1.0.0, feature/xxx)'
+        required: true
+        default: 'master'
+        type: string
+      image_version:
+        description: '镜像版本号 (例如: 1.0.0, latest, dev)'
+        required: true
+        default: 'latest'
+        type: string
+      build_amd64:
+        description: '构建 AMD64 架构'
+        required: true
+        default: true
+        type: boolean
+      build_arm64:
+        description: '构建 ARM64 架构'
+        required: true
+        default: true
+        type: boolean
+      push_latest:
+        description: '是否同时推送 latest 标签'
+        required: false
+        default: false
+        type: boolean
+      sign_images:
+        description: '是否签名镜像'
+        required: false
+        default: true
+        type: boolean
+      auto_version_from_tag:
+        description: '自动使用标签名作为镜像版本（仅当 ref 是标签时生效）'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  # ───────── 准备工作：检测引用类型和验证输入 ─────────
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      ref_type: ${{ steps.check_ref.outputs.ref_type }}
+      final_image_version: ${{ steps.determine_version.outputs.version }}
+      
+    steps:
+      - name: Checkout for ref check
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Check ref type
+        id: check_ref
+        run: |
+          # 检查是否为标签
+          if git show-ref --tags --verify --quiet "refs/tags/${{ inputs.ref }}"; then
+            echo "ref_type=tag" >> $GITHUB_OUTPUT
+            echo "✅ 检测到标签: ${{ inputs.ref }}"
+          # 检查是否为分支
+          elif git show-ref --heads --verify --quiet "refs/heads/${{ inputs.ref }}"; then
+            echo "ref_type=branch" >> $GITHUB_OUTPUT
+            echo "✅ 检测到分支: ${{ inputs.ref }}"
+          # 检查是否为 commit SHA
+          elif git cat-file -e "${{ inputs.ref }}^{commit}" 2>/dev/null; then
+            echo "ref_type=commit" >> $GITHUB_OUTPUT
+            echo "✅ 检测到提交: ${{ inputs.ref }}"
+          else
+            echo "❌ 未找到指定的引用: ${{ inputs.ref }}"
+            exit 1
+          fi
+          
+      - name: Determine final image version
+        id: determine_version
+        run: |
+          # 如果选择了自动使用标签名且当前是标签
+          if [[ "${{ inputs.auto_version_from_tag }}" == "true" ]] && [[ "${{ steps.check_ref.outputs.ref_type }}" == "tag" ]]; then
+            # 移除可能的 'v' 前缀
+            version=$(echo "${{ inputs.ref }}" | sed 's/^v//')
+            echo "version=$version" >> $GITHUB_OUTPUT
+            echo "📌 使用标签名作为镜像版本: $version"
+          else
+            echo "version=${{ inputs.image_version }}" >> $GITHUB_OUTPUT
+            echo "📌 使用指定的镜像版本: ${{ inputs.image_version }}"
+          fi
+          
+      - name: Build summary
+        run: |
+          echo "## 🔧 构建配置" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 配置项 | 值 |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| 引用类型 | ${{ steps.check_ref.outputs.ref_type }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 构建引用 | ${{ inputs.ref }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 镜像版本 | ${{ steps.determine_version.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| AMD64 | ${{ inputs.build_amd64 && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ARM64 | ${{ inputs.build_arm64 && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Latest 标签 | ${{ inputs.push_latest && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 镜像签名 | ${{ inputs.sign_images && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+
+  build-amd64:
+    needs: prepare
+    runs-on: self-hosted
+    if: inputs.build_amd64
+    
+    env:
+      docker.platform: linux/amd64
+      IMAGE_VERSION: ${{ needs.prepare.outputs.final_image_version }}
+      PLATFORM_SUFFIX: amd64
+
+    steps:
+      # ───────── 1. 检出代码 ─────────
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      # ───────── 2. 配置 JDK21 + Maven（带 ~/.m2 缓存） ─────────
+      - name: Set up JDK 21 & Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.6
+
+      # ───────── 3. 缓存 CNB 层 ─────────
+      - name: Cache CNB layers
+        uses: actions/cache@v4
+        with:
+          path: .cnb-cache
+          key: cnb-${{ hashFiles('pom.xml') }}-amd64-${{ inputs.ref }}
+          restore-keys: |
+            cnb-${{ hashFiles('pom.xml') }}-amd64-
+            cnb-${{ hashFiles('pom.xml') }}-
+
+      # ───────── 4. 启用 QEMU & Buildx ─────────
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      # ───────── 5. 登录镜像仓库 ─────────
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # ───────── 6. 构建并推送 AMD64 镜像 ─────────
+      - name: Display Build Information
+        run: |
+          echo "=== 构建信息 ==="
+          echo "构建引用: ${{ inputs.ref }}"
+          echo "引用类型: ${{ needs.prepare.outputs.ref_type }}"
+          echo "镜像版本: ${{ env.IMAGE_VERSION }}"
+          echo "构建平台: linux/amd64"
+          echo "镜像标签: ${{ env.DOCKER_IMAGE_REPO }}/drinkup:${{ env.IMAGE_VERSION }}-${{ env.PLATFORM_SUFFIX }}"
+          echo ""
+          echo "Git 信息:"
+          git log -1 --pretty=format:"提交: %H%n作者: %an <%ae>%n日期: %ai%n消息: %s"
+        env:
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+
+      - name: Build Image (linux/amd64)
+        env:
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+        run: |
+          mvn -B -ntp spring-boot:build-image \
+            -Dspring-boot.build-image.image.name=${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }}-${{ env.PLATFORM_SUFFIX }} \
+            -Dspring-boot.build-image.image.publish=false
+
+      - name: Push Versioned Image
+        env:
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+        run: |
+          docker push ${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }}-${{ env.PLATFORM_SUFFIX }}
+
+      - name: Fix CNB cache permissions
+        if: always()
+        run: |
+          sudo chown -R $(id -u):$(id -g) .cnb-cache || true
+
+  build-arm64:
+    needs: prepare
+    runs-on: self-hosted
+    if: inputs.build_arm64
+    
+    env:
+      docker.platform: linux/arm64
+      IMAGE_VERSION: ${{ needs.prepare.outputs.final_image_version }}
+      PLATFORM_SUFFIX: arm64
+
+    steps:
+      # ───────── 1. 检出代码 ─────────
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      # ───────── 2. 配置 JDK21 + Maven（带 ~/.m2 缓存） ─────────
+      - name: Set up JDK 21 & Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.6
+
+      # ───────── 3. 缓存 CNB 层 ─────────
+      - name: Cache CNB layers
+        uses: actions/cache@v4
+        with:
+          path: .cnb-cache
+          key: cnb-${{ hashFiles('pom.xml') }}-arm64-${{ inputs.ref }}
+          restore-keys: |
+            cnb-${{ hashFiles('pom.xml') }}-arm64-
+            cnb-${{ hashFiles('pom.xml') }}-
+
+      # ───────── 4. 启用 QEMU & Buildx ─────────
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      # ───────── 5. 登录镜像仓库 ─────────
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # ───────── 6. 构建并推送 ARM64 镜像 ─────────
+      - name: Display Build Information
+        run: |
+          echo "=== 构建信息 ==="
+          echo "构建引用: ${{ inputs.ref }}"
+          echo "引用类型: ${{ needs.prepare.outputs.ref_type }}"
+          echo "镜像版本: ${{ env.IMAGE_VERSION }}"
+          echo "构建平台: linux/arm64"
+          echo "镜像标签: ${{ env.DOCKER_IMAGE_REPO }}/drinkup:${{ env.IMAGE_VERSION }}-${{ env.PLATFORM_SUFFIX }}"
+          echo ""
+          echo "Git 信息:"
+          git log -1 --pretty=format:"提交: %H%n作者: %an <%ae>%n日期: %ai%n消息: %s"
+        env:
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+
+      - name: Build Image (linux/arm64)
+        env:
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+        run: |
+          mvn -B -ntp spring-boot:build-image \
+            -Dspring-boot.build-image.image.name=${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }}-${{ env.PLATFORM_SUFFIX }} \
+            -Dspring-boot.build-image.image.publish=false
+
+      - name: Push Versioned Image
+        env:
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+        run: |
+          docker push ${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }}-${{ env.PLATFORM_SUFFIX }}
+
+      - name: Fix CNB cache permissions
+        if: always()
+        run: |
+          sudo chown -R $(id -u):$(id -g) .cnb-cache || true
+
+  manifest:
+    needs: [prepare, build-amd64, build-arm64]
+    runs-on: self-hosted
+    if: |
+      always() && 
+      (needs.build-amd64.result == 'success' || needs.build-arm64.result == 'success' || 
+       needs.build-amd64.result == 'skipped' || needs.build-arm64.result == 'skipped') &&
+      !(needs.build-amd64.result == 'skipped' && needs.build-arm64.result == 'skipped')
+    
+    env:
+      IMAGE_VERSION: ${{ needs.prepare.outputs.final_image_version }}
+    
+    steps:
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # ───────── 7. 创建多架构 manifest ─────────
+      - name: Create Multi-Arch Manifest for Version
+        env:
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+        run: |
+          # 构建镜像列表
+          images=""
+          
+          # 检查哪些架构构建成功
+          if [[ "${{ needs.build-amd64.result }}" == "success" ]]; then
+            images="${images} ${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }}-amd64"
+            echo "包含 AMD64 架构"
+          fi
+          
+          if [[ "${{ needs.build-arm64.result }}" == "success" ]]; then
+            images="${images} ${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }}-arm64"
+            echo "包含 ARM64 架构"
+          fi
+          
+          # 创建版本标签的 manifest
+          echo "创建多架构 manifest: ${{ env.IMAGE_VERSION }}"
+          docker buildx imagetools create \
+            --tag ${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }} \
+            $images
+
+      # ───────── 8. 可选：创建 latest 标签 ─────────
+      - name: Create Latest Tag
+        if: inputs.push_latest == true
+        env:
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+        run: |
+          images=""
+          
+          if [[ "${{ needs.build-amd64.result }}" == "success" ]]; then
+            images="${images} ${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }}-amd64"
+          fi
+          
+          if [[ "${{ needs.build-arm64.result }}" == "success" ]]; then
+            images="${images} ${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }}-arm64"
+          fi
+          
+          # 创建 latest 标签
+          echo "创建 latest 标签"
+          docker buildx imagetools create \
+            --tag ${DOCKER_IMAGE_REPO}/drinkup:latest \
+            $images
+
+      # ───────── 9. 可选：签名镜像 ─────────
+      - name: Install Cosign
+        if: inputs.sign_images == true
+        uses: sigstore/cosign-installer@main
+        with:
+          cosign-release: 'v2.2.2'
+      
+      - name: Sign Images with Cosign
+        if: inputs.sign_images == true
+        env:
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          echo "$COSIGN_PRIVATE_KEY" > cosign.key
+          
+          # 签名版本标签
+          cosign sign --key cosign.key ${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }}
+          
+          # 签名各架构镜像
+          if [[ "${{ needs.build-amd64.result }}" == "success" ]]; then
+            cosign sign --key cosign.key ${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }}-amd64
+          fi
+          
+          if [[ "${{ needs.build-arm64.result }}" == "success" ]]; then
+            cosign sign --key cosign.key ${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }}-arm64
+          fi
+          
+          # 如果推送了 latest，也签名 latest
+          if [[ "${{ inputs.push_latest }}" == "true" ]]; then
+            cosign sign --key cosign.key ${DOCKER_IMAGE_REPO}/drinkup:latest
+          fi
+          
+          rm -f cosign.key
+
+      # ───────── 10. 输出构建结果 ─────────
+      - name: Summary
+        env:
+          DOCKER_IMAGE_REPO: "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_ORG }}"
+        run: |
+          echo "## 🎉 构建完成" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 构建信息" >> $GITHUB_STEP_SUMMARY
+          echo "- **构建引用**: ${{ inputs.ref }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **引用类型**: ${{ needs.prepare.outputs.ref_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **版本**: ${{ env.IMAGE_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **仓库**: ${DOCKER_IMAGE_REPO}/drinkup" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 构建状态" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.build-amd64.result }}" == "success" ]]; then
+            echo "- ✅ AMD64: 构建成功" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.build-amd64.result }}" == "skipped" ]]; then
+            echo "- ⏭️ AMD64: 已跳过" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ AMD64: 构建失败" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.build-arm64.result }}" == "success" ]]; then
+            echo "- ✅ ARM64: 构建成功" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.build-arm64.result }}" == "skipped" ]]; then
+            echo "- ⏭️ ARM64: 已跳过" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ ARM64: 构建失败" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 生成的镜像标签" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }}\` (多架构)" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.build-amd64.result }}" == "success" ]]; then
+            echo "- \`${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }}-amd64\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.build-arm64.result }}" == "success" ]]; then
+            echo "- \`${DOCKER_IMAGE_REPO}/drinkup:${{ env.IMAGE_VERSION }}-arm64\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ inputs.push_latest }}" == "true" ]]; then
+            echo "- \`${DOCKER_IMAGE_REPO}/drinkup:latest\` (多架构)" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ inputs.sign_images }}" == "true" ]]; then
+            echo "✅ 所有镜像已使用 Cosign 签名" >> $GITHUB_STEP_SUMMARY
+          fi

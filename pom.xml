@@ -359,14 +359,12 @@
 				<configuration>
 					<image>
 						<name>${spring-boot.build-image.image.name}</name>
-						<builder>paketobuildpacks/builder-jammy-java-tiny</builder>
+						<builder>paketobuildpacks/builder-jammy-java-tiny:latest</builder>
 						<env>
 							<BP_NATIVE_IMAGE>false</BP_NATIVE_IMAGE>
 							<BP_JVM_VERSION>21</BP_JVM_VERSION>
+							<BP_JVM_TYPE>JRE</BP_JVM_TYPE>
 						</env>
-						<buildpacks>
-							<buildpack>gcr.io/paketo-buildpacks/java</buildpack>
-						</buildpacks>
 						<createdDate>now</createdDate>
 						<buildCache>
 							<bind>
