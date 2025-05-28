@@ -15,9 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
 import java.util.Optional;
 
 import cool.drinkup.drinkup.favorite.internal.controller.req.AddFavoriteRequest;
+import cool.drinkup.drinkup.favorite.internal.controller.req.CheckFavoriteMultiBatchRequest;
+import cool.drinkup.drinkup.favorite.internal.controller.resp.CheckFavoriteMultiBatchResponse;
 import cool.drinkup.drinkup.favorite.internal.dto.UserFavoriteDTO;
 import cool.drinkup.drinkup.favorite.internal.service.UserFavoriteService;
 import cool.drinkup.drinkup.favorite.spi.FavoriteType;
@@ -109,8 +112,43 @@ public class UserFavoriteController {
         return ResponseEntity.ok(CommonResp.success(favorites));
     }
     
-   
-
+    @Operation(
+        summary = "检查收藏状态",
+        description = "检查当前登录用户是否收藏了指定对象",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "成功获取收藏状态"),
+            @ApiResponse(responseCode = "401", description = "未授权访问")
+        }
+    )
+    @GetMapping("/check/{objectType}/{objectId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<CommonResp<Boolean>> checkFavorite(
+            @Parameter(description = "收藏对象类型") @PathVariable FavoriteType objectType,
+            @Parameter(description = "收藏对象ID") @PathVariable Long objectId) {
+        Long userId = getCurrentUserId();
+        boolean isFavorited = favoriteService.isFavorited(userId, objectType, objectId);
+        return ResponseEntity.ok(CommonResp.success(isFavorited));
+    }
+    
+    @Operation(
+        summary = "批量检查收藏状态（多类型）",
+        description = "批量检查当前登录用户是否收藏了指定的多个对象（支持多种类型）",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "成功获取批量收藏状态"),
+            @ApiResponse(responseCode = "401", description = "未授权访问")
+        }
+    )
+    @PostMapping("/check-batch")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<CommonResp<CheckFavoriteMultiBatchResponse>> checkFavoriteBatchMulti(
+            @Parameter(description = "收藏对象列表") @Valid @RequestBody CheckFavoriteMultiBatchRequest request) {
+        Long userId = getCurrentUserId();
+        Map<FavoriteType, Map<Long, Boolean>> statusMap = favoriteService.checkFavoriteStatusMulti(userId, request.getItems());
+        CheckFavoriteMultiBatchResponse response = new CheckFavoriteMultiBatchResponse();
+        response.setStatusMap(statusMap);
+        return ResponseEntity.ok(CommonResp.success(response));
+    }
+    
     private Long getCurrentUserId() {
         Optional<AuthenticatedUserDTO> currentAuthenticatedUser = authenticationServiceFacade.getCurrentAuthenticatedUser();
         if (currentAuthenticatedUser.isEmpty()) {
@@ -119,4 +157,5 @@ public class UserFavoriteController {
         AuthenticatedUserDTO authenticatedUserDTO = currentAuthenticatedUser.get();
         return authenticatedUserDTO.userId();
     }
+    
 } 

@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import cool.drinkup.drinkup.favorite.internal.controller.req.CheckFavoriteItemRequest;
 import cool.drinkup.drinkup.favorite.internal.dto.UserFavoriteDTO;
 import cool.drinkup.drinkup.favorite.internal.entity.UserFavorite;
 import cool.drinkup.drinkup.favorite.internal.repository.UserFavoriteRepository;
@@ -144,6 +145,26 @@ public class UserFavoriteService {
                     Function.identity(),
                     favoritedIds::contains
                 ));
+    }
+    
+    // 批量检查多种类型的收藏状态
+    public Map<FavoriteType, Map<Long, Boolean>> checkFavoriteStatusMulti(Long userId, List<CheckFavoriteItemRequest> requests) {
+        // 1. 按类型分组
+        Map<FavoriteType, List<Long>> typeToIds = requests.stream()
+                .collect(Collectors.groupingBy(
+                    CheckFavoriteItemRequest::getObjectType,
+                    Collectors.mapping(CheckFavoriteItemRequest::getObjectId, Collectors.toList())
+                ));
+        
+        // 2. 对每种类型批量查询
+        Map<FavoriteType, Map<Long, Boolean>> result = new HashMap<>();
+        for (Map.Entry<FavoriteType, List<Long>> entry : typeToIds.entrySet()) {
+            FavoriteType type = entry.getKey();
+            List<Long> objectIds = entry.getValue();
+            result.put(type, checkFavoriteStatus(userId, type, objectIds));
+        }
+        
+        return result;
     }
     
     // 转换为DTO
