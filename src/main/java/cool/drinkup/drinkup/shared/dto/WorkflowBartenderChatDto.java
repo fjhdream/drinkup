@@ -68,6 +68,7 @@ public class WorkflowBartenderChatDto {
     private String image;
     @JsonAlias("image_prompt")
     private String imagePrompt;
+    private String favoriteType = "USER_WINE";
     
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)

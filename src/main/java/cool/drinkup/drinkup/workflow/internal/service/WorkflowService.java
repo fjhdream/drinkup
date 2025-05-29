@@ -12,6 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import cool.drinkup.drinkup.shared.dto.UserWine;
 import cool.drinkup.drinkup.shared.dto.WorkflowBartenderChatDto;
 import cool.drinkup.drinkup.wine.spi.UserWineServiceFacade;
 import cool.drinkup.drinkup.wine.spi.WineServiceFacade;
@@ -102,7 +103,8 @@ public class WorkflowService {
             String imageId = imageService.storeImage(imageUrl);
             chatBotResponse.setImage(imageId);
             // Convert workflow response to wine response for saving
-            userWineServiceFacade.saveUserWine(chatBotResponse);
+            UserWine saveUserWine = userWineServiceFacade.saveUserWine(chatBotResponse);
+            chatBotResponse.setId(saveUserWine.getId());
             chatBotResponse.setImage(imageService.getImageUrl(imageId));
             return chatBotResponse;
         } catch (JsonProcessingException e) {

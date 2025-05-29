@@ -1,5 +1,8 @@
 package cool.drinkup.drinkup.favorite.spi;
 
+import cool.drinkup.drinkup.shared.dto.UserWine;
+import cool.drinkup.drinkup.shared.dto.Wine;
+
 /**
  * 收藏类型枚举
  */

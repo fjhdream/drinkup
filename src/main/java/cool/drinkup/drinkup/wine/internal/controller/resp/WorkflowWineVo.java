@@ -17,7 +17,7 @@ import lombok.Data;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class WorkflowWineVo {
+public class WorkflowWineVo implements cool.drinkup.drinkup.shared.dto.Wine {
     private String id;
     private String name;
     @JsonAlias("name_en")
