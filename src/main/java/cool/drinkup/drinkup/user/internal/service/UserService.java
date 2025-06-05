@@ -10,6 +10,7 @@ import java.util.Set;
 
 import cool.drinkup.drinkup.user.internal.controller.req.LoginRequest;
 import cool.drinkup.drinkup.user.internal.mapper.UserMapper;
+import cool.drinkup.drinkup.user.internal.model.OAuthTypeEnum;
 import cool.drinkup.drinkup.user.internal.model.RoleEnum;
 import cool.drinkup.drinkup.user.internal.model.User;
 import cool.drinkup.drinkup.user.internal.repository.UserRepository;
@@ -26,6 +27,16 @@ public class UserService {
     @Transactional(readOnly = true)
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> findByOauthId(String oauthId, OAuthTypeEnum oauthType) {
+        return userRepository.findByOauthIdAndOauthType(oauthId, oauthType);
     }
 
     @Transactional(readOnly = true)
@@ -117,7 +128,7 @@ public class UserService {
     }
 
     @Transactional
-    public void save(User user) {
-        userRepository.save(user);
+    public User save(User user) {
+        return userRepository.save(user);
     }
 } 
