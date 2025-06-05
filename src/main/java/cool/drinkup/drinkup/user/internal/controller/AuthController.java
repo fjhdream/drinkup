@@ -24,6 +24,8 @@ import cool.drinkup.drinkup.user.internal.mapper.UserMapper;
 import cool.drinkup.drinkup.user.internal.model.DrinkupUserDetails;
 import cool.drinkup.drinkup.user.internal.model.User;
 import cool.drinkup.drinkup.user.internal.service.UserService;
+import cool.drinkup.drinkup.user.internal.service.strategy.LoginStrategy;
+import cool.drinkup.drinkup.user.internal.service.strategy.LoginStrategyFactory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -38,11 +40,12 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Tag(name = "认证管理", description = "用户认证相关的接口，包括注册、登录和登出")
-public class    AuthController {
+public class AuthController {
 
     private final UserService userService;
     private final SmsSender smsSender;
     private final UserMapper userMapper;
+    private final LoginStrategyFactory loginStrategyFactory;
 
     @Operation(summary = "发送验证码", description = "发送验证码到指定手机号")
     @ApiResponses(value = {
@@ -68,40 +71,42 @@ public class    AuthController {
         return String.valueOf(code);
     }
 
-    @Operation(summary = "用户登录", description = "用户使用手机号和验证码登录")
+    @Operation(summary = "用户登录", description = "支持多种登录方式：手机号验证码登录和 Google 登录")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "登录成功"),
-            @ApiResponse(responseCode = "401", description = "登录失败，验证码错误或已过期"),
-            @ApiResponse(responseCode = "404", description = "用户不存在")
+            @ApiResponse(responseCode = "400", description = "登录失败，参数错误或凭据无效"),
+            @ApiResponse(responseCode = "401", description = "登录失败，认证失败")
     })
     @PostMapping("/login")
     public ResponseEntity<CommonResp<UserLoginResp>> login(
-            @Parameter(description = "登录信息，包含手机号和验证码") @Valid @RequestBody LoginRequest loginRequest,
+            @Parameter(description = "登录信息，支持手机号验证码登录和 Google 登录") 
+            @Valid @RequestBody LoginRequest loginRequest,
             HttpServletRequest request) {
-        String phoneNumber = loginRequest.getPhone();
-        String verificationCode = loginRequest.getVerificationCode();
 
         try {
-            // 验证验证码
-            if (!isTestUser(phoneNumber, verificationCode)) {
-               if (!smsSender.verifySms(phoneNumber, verificationCode)) {
-                   return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                           .body(CommonResp.error("验证码错误或已过期"));
-               }
+            // 验证登录类型是否支持
+            if (!loginStrategyFactory.isSupported(loginRequest.getLoginType())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(CommonResp.error("不支持的登录类型: " + loginRequest.getLoginType()));
             }
 
-            // 查找用户
-            User user = userService.findByPhone(phoneNumber).orElse(null);
-            
-            if (user == null) {
-                user = userService.registerUser(loginRequest);
+            // 获取对应的登录策略
+            LoginStrategy loginStrategy = loginStrategyFactory.getStrategy(loginRequest.getLoginType());
+
+            // 验证登录凭据
+            if (!loginStrategy.validateCredentials(loginRequest)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(CommonResp.error("登录凭据验证失败"));
             }
+
+            // 获取或创建用户
+            User user = loginStrategy.getOrCreateUser(loginRequest);
 
             // 创建 DrinkupUserDetails
             DrinkupUserDetails userDetails = new DrinkupUserDetails(
                     user.getId(),
                     user.getUsername(),
-                    "", // empty password as we're using verification code
+                    "", // empty password as we're using other authentication methods
                     true,
                     user.getRoles().stream()
                         .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
@@ -116,11 +121,11 @@ public class    AuthController {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
+            // 清除旧会话并创建新会话
             HttpSession oldSession = request.getSession(false);
             if (oldSession != null) {
                 oldSession.invalidate();
             }
-            // 创建会话
             HttpSession session = request.getSession(true);
             session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
                     SecurityContextHolder.getContext());
@@ -131,17 +136,11 @@ public class    AuthController {
                     .build();
 
             return ResponseEntity.ok(CommonResp.success(loginResp));
+            
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(CommonResp.error("登录失败: " + e.getMessage()));
         }
-    }
-
-    private boolean isTestUser(String phoneNumber, String verificationCode) {
-        if (phoneNumber.equalsIgnoreCase("13800138000") && verificationCode.equalsIgnoreCase("250528")) {
-            return true;
-        }
-        return false;
     }
 
     @Operation(summary = "用户登出", description = "用户登出并清除会话")
@@ -151,7 +150,7 @@ public class    AuthController {
     @PostMapping("/logout")
     public ResponseEntity<CommonResp<LogoutResp>> logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
-        if ( session != null) {
+        if (session != null) {
             session.invalidate();
         }
         SecurityContextHolder.clearContext();
