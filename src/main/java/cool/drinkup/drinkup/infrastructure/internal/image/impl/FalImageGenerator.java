@@ -1,5 +1,6 @@
 package cool.drinkup.drinkup.infrastructure.internal.image.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonObject;
 
 import java.util.Map;
@@ -22,6 +23,8 @@ public class FalImageGenerator implements ImageGenerator {
 
     private final FalClient falClient;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     public FalImageGenerator(FalProperties falProperties) {
         this.falProperties = falProperties;
         this.falClient = FalClient.withConfig(ClientConfig.withCredentials(CredentialsResolver.fromApiKey(falProperties.getApiKey())));
@@ -29,8 +32,10 @@ public class FalImageGenerator implements ImageGenerator {
 
     @Override
     public String generateImage(String prompt) {
-        var input = Map.of("prompt", prompt);
-        var job =  falClient.queue().submit(this.falProperties.getEndpointId(), QueueSubmitOptions.withInput(input));
+        var input = falProperties.getImageProperties();
+        input.setPrompt(prompt);
+        var inputMap = objectMapper.convertValue(input, Map.class);
+        var job =  falClient.queue().submit(this.falProperties.getEndpointId(), QueueSubmitOptions.withInput(inputMap));
         var requestId = job.getRequestId();
         var result = falClient.queue().status(this.falProperties.getEndpointId(), QueueStatusOptions.withRequestId(requestId));
         long startTime = System.currentTimeMillis();
@@ -46,18 +51,15 @@ public class FalImageGenerator implements ImageGenerator {
                 log.error("Error waiting for job to complete", e);
             }
             log.info("Waiting for job to complete, current status: {}, elapsed time: {}s", 
-                result.getStatus(), 
+                result.getStatus(),
                 (System.currentTimeMillis() - startTime) / 1000);
             result = falClient.queue().status(this.falProperties.getEndpointId(), QueueStatusOptions.withRequestId(requestId));
         }
         var output = falClient.queue().result(this.falProperties.getEndpointId(), QueueResultOptions.withRequestId(requestId));
-        // TODO: 待确认返回体结构
         JsonObject data = output.getData();
-        var image = data.getAsJsonObject("image");
-        var images = image.getAsJsonArray("images");
+        var images = data.getAsJsonArray("images");
         var firstImage = images.get(0).getAsJsonObject();
-        var imageUrl = firstImage.get("url").getAsString();
-        return imageUrl;
+        return firstImage.get("url").getAsString();
     }
 
 }
