@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mzt.logapi.starter.annotation.LogRecord;
+
+import cool.drinkup.drinkup.common.log.event.AIChatEvent;
 import cool.drinkup.drinkup.shared.spi.CommonResp;
 import cool.drinkup.drinkup.workflow.internal.controller.resp.ImageUploadResp;
 import cool.drinkup.drinkup.workflow.internal.service.image.ImageService;
@@ -32,6 +35,12 @@ public class ImageController {
     
     private final ImageService imageService;
     
+    @LogRecord(
+        type = AIChatEvent.AI_CHAT,
+        subType = AIChatEvent.BehaviorEvent.IMAGE_UPLOAD,
+        bizNo = "{{#_ret.body.data.imageId}}",
+        success = "用户上传图片成功，图片大小：{{#image.size}}字节"
+    )
     @Operation(
         summary = "上传图片",
         description = "上传图片并返回图片ID，可以通过该ID获取图片"

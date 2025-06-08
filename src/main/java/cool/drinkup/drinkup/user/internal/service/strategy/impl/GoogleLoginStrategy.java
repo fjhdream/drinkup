@@ -6,6 +6,7 @@ import org.springframework.util.StringUtils;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import cool.drinkup.drinkup.user.internal.controller.req.LoginRequest;
@@ -53,7 +54,7 @@ public class GoogleLoginStrategy implements LoginStrategy {
     }
 
     @Override
-    public User getOrCreateUser(LoginRequest loginRequest) {
+    public LoginResult getOrCreateUser(LoginRequest loginRequest) {
         try {
             GoogleIdToken token = googleTokenService.verifyIdToken(loginRequest.getIdToken());
             if ( token == null) {
@@ -67,8 +68,12 @@ public class GoogleLoginStrategy implements LoginStrategy {
             String picture = (String) payload.get("picture");
 
             // 通过邮箱查找现有用户
-            return userService.findByOauthId(oauthId, OAuthTypeEnum.GOOGLE)
-                    .orElseGet(() -> createNewGoogleUser(email, name, picture, oauthId, OAuthTypeEnum.GOOGLE));
+            Optional<User> user = userService.findByOauthId(oauthId, OAuthTypeEnum.GOOGLE);
+            if (user.isEmpty()) {
+                User newUser = createNewGoogleUser(email, name, picture, oauthId, OAuthTypeEnum.GOOGLE);
+                return new LoginResult(newUser, true);
+            }
+            return new LoginResult(user.get(), false);
 
         } catch (Exception e) {
             log.error("获取或创建 Google 用户失败: {}", e.getMessage());

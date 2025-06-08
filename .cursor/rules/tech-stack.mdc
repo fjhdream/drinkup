@@ -56,3 +56,7 @@ alwaysApply: false
 - Spring Boot Test
 - Spring Security Test
 - Spring REST Docs (API 文档测试)
+
+### 日志框架
+
+- mzt-biz-log (通用操作日志组件)

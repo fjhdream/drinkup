@@ -28,12 +28,12 @@ jobs:
       # ───────── 1. 检出代码 ─────────
       - uses: actions/checkout@v4
 
-      # ───────── 2. 配置 JDK21 + Maven（带 ~/.m2 缓存） ─────────
-      - name: Set up JDK 21 & Maven
+      # ───────── 2. 配置 JDK24 + Maven（带 ~/.m2 缓存） ─────────
+      - name: Set up JDK 24 & Maven
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 24
           cache: maven
       
       - name: Set up Maven

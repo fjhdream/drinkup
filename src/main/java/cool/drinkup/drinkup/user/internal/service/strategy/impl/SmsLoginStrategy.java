@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import cool.drinkup.drinkup.infrastructure.spi.SmsSender;
@@ -59,13 +60,17 @@ public class SmsLoginStrategy implements LoginStrategy {
     }
 
     @Override
-    public User getOrCreateUser(LoginRequest loginRequest) {
+    public LoginResult getOrCreateUser(LoginRequest loginRequest) {
         String phoneNumber = loginRequest.getPhone();
 
         // 查找现有用户
-        return userService.findByPhone(phoneNumber)
-                .orElseGet(() -> createNewUser(loginRequest));
-    }
+        Optional<User> user = userService.findByPhone(phoneNumber);
+        if (user.isEmpty()) {
+            User newUser = createNewUser(loginRequest);
+            return new LoginResult(newUser, true);
+        }
+        return new LoginResult(user.get(), false);
+    }  
 
     @Override
     public String getUserIdentifier(LoginRequest loginRequest) {

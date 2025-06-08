@@ -29,7 +29,7 @@ public interface LoginStrategy {
      * @param loginRequest 登录请求
      * @return 用户对象
      */
-    User getOrCreateUser(LoginRequest loginRequest);
+    LoginResult getOrCreateUser(LoginRequest loginRequest);
 
     /**
      * 获取用户唯一标识符（用于查找现有用户）
@@ -38,4 +38,6 @@ public interface LoginStrategy {
      * @return 用户唯一标识符
      */
     String getUserIdentifier(LoginRequest loginRequest);
+
+    record LoginResult(User user, boolean isNewUser) {}
 }

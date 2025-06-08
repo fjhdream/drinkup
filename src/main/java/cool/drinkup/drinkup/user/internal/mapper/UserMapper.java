@@ -21,6 +21,9 @@ public interface UserMapper {
     @Mapping(target = "avatar", ignore = true)
     @Mapping(target = "createDate", ignore = true)
     @Mapping(target = "updateDate", ignore = true)
+    @Mapping(target = "email", ignore = true)
+    @Mapping(target = "oauthId", ignore = true)
+    @Mapping(target = "oauthType", ignore = true)
     User toUser(LoginRequest loginRequest);
 
     UserProfileResp toUserProfileResp(User user);

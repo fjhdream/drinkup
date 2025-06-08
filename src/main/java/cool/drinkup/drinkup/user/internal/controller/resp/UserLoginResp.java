@@ -16,6 +16,9 @@ public class UserLoginResp {
     @Schema(description = "登录消息")
     private String message;
 
+    @Schema(description = "是否新用户")
+    private Boolean isNewUser;
+
     @Schema(description = "用户信息")
     private UserProfileResp user;
 }
