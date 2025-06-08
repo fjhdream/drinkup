@@ -15,9 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mzt.logapi.starter.annotation.LogRecord;
+
 import java.util.Map;
 import java.util.Optional;
 
+import cool.drinkup.drinkup.common.log.event.WineEvent;
 import cool.drinkup.drinkup.favorite.internal.controller.req.AddFavoriteRequest;
 import cool.drinkup.drinkup.favorite.internal.controller.req.CheckFavoriteMultiBatchRequest;
 import cool.drinkup.drinkup.favorite.internal.controller.resp.CheckFavoriteMultiBatchResponse;
@@ -49,6 +52,12 @@ public class UserFavoriteController {
     private final UserFavoriteService favoriteService;
     private final AuthenticationServiceFacade authenticationServiceFacade;
     
+    @LogRecord(
+        type = WineEvent.WINE,
+        subType = WineEvent.BehaviorEvent.FAVORITE_ADD,
+        bizNo = "{{#request.objectType}}-{{#request.objectId}}",
+        success = "用户添加{{#request.objectType}}类型收藏成功，对象ID：{{#request.objectId}}"
+    )
     @Operation(
         summary = "添加收藏",
         description = "为当前登录用户添加新的收藏项",
@@ -68,6 +77,12 @@ public class UserFavoriteController {
         return ResponseEntity.ok(CommonResp.success(null));
     }
     
+    @LogRecord(
+        type = WineEvent.WINE,
+        subType = WineEvent.BehaviorEvent.FAVORITE_REMOVE,
+        bizNo = "{{#objectType}}-{{#objectId}}",
+        success = "用户取消{{#objectType}}类型收藏成功，对象ID：{{#objectId}}"
+    )
     @Operation(
         summary = "取消收藏",
         description = "删除当前登录用户的收藏项",

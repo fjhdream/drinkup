@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.6</version>
+		<version>3.5.0</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>cool.drinkup</groupId>
 	<artifactId>drinkup</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>drinkup</name>
 	<description>drinkup-backend</description>
 	<url/>
@@ -27,7 +27,7 @@
 		<url/>
 	</scm>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>24</java.version>
 		<mvnd.builder.rule>smart</mvnd.builder.rule>
 
 		<!-- 构镜用到的属性 -->
@@ -50,6 +50,7 @@
 		<opentelemetry.logback-appender.version>2.15.0-alpha</opentelemetry.logback-appender.version>
 		<fal-client.version>0.7.1</fal-client.version>
 		<google-api-client.version>2.2.0</google-api-client.version>
+		<bizlog-sdk.version>3.0.6</bizlog-sdk.version>
 	</properties>
 	<dependencies>
 		<!-- Actuator + Prometheus 指标 -->
@@ -120,6 +121,10 @@
 			<groupId>org.springframework.session</groupId>
 			<artifactId>spring-session-data-redis</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+		</dependency>
 
 		<!-- Spring AI -->
 		<dependency>
@@ -134,12 +139,20 @@
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-starter-vector-store-milvus</artifactId>
 		</dependency>
+
+		<!-- Fal -->
 		<dependency>
 			<groupId>ai.fal.client</groupId>
 			<artifactId>fal-client</artifactId>
 			<version>${fal-client.version}</version>
 		  </dependency>
 	
+		<!-- Log -->
+		<dependency>
+			<groupId>io.github.mouzt</groupId>
+			<artifactId>bizlog-sdk</artifactId>
+			<version>${bizlog-sdk.version}</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -371,15 +384,16 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>build-image</goal>
+						</goals>
+					</execution>
+				</executions>
 				<configuration>
 					<image>
 						<name>${spring-boot.build-image.image.name}</name>
-						<builder>paketobuildpacks/builder-jammy-java-tiny:latest</builder>
-						<env>
-							<BP_NATIVE_IMAGE>false</BP_NATIVE_IMAGE>
-							<BP_JVM_VERSION>21</BP_JVM_VERSION>
-							<BP_JVM_TYPE>JRE</BP_JVM_TYPE>
-						</env>
 						<createdDate>now</createdDate>
 						<buildCache>
 							<bind>

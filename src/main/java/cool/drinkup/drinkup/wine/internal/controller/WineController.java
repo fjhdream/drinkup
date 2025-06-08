@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mzt.logapi.starter.annotation.LogRecord;
+
+import cool.drinkup.drinkup.common.log.event.WineEvent;
 import cool.drinkup.drinkup.shared.spi.CommonResp;
 import cool.drinkup.drinkup.wine.internal.controller.resp.RandomWineResp;
 import cool.drinkup.drinkup.wine.internal.controller.resp.WorkflowUserWineVo;
@@ -106,6 +109,12 @@ public class WineController {
         return ResponseEntity.ok().build();
     }
     
+    @LogRecord(
+        type = WineEvent.WINE,
+        subType = WineEvent.BehaviorEvent.WINE_RANDOM,
+        bizNo = "{{#type}}-{{#count}}",
+        success = "用户随机获取{{#count}}杯{{#type}}类型的酒"
+    )
     @GetMapping("/random")
     @Operation(summary = "随机来一杯或多杯", description = "根据类型随机获取酒，支持三种类型：mixed(完全随机)、user(用户酒库随机)、iba(AI酒单随机)")
     @Parameter(name = "type", description = "随机类型：mixed(完全随机)、user(用户酒库随机)、iba(酒单随机)", required = true)

@@ -12,8 +12,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mzt.logapi.starter.annotation.LogRecord;
+
 import java.util.stream.Collectors;
 
+import cool.drinkup.drinkup.common.log.event.UserEvent;
 import cool.drinkup.drinkup.infrastructure.spi.SmsSender;
 import cool.drinkup.drinkup.shared.spi.CommonResp;
 import cool.drinkup.drinkup.user.internal.controller.req.LoginRequest;
@@ -23,7 +26,6 @@ import cool.drinkup.drinkup.user.internal.controller.resp.UserLoginResp;
 import cool.drinkup.drinkup.user.internal.mapper.UserMapper;
 import cool.drinkup.drinkup.user.internal.model.DrinkupUserDetails;
 import cool.drinkup.drinkup.user.internal.model.User;
-import cool.drinkup.drinkup.user.internal.service.UserService;
 import cool.drinkup.drinkup.user.internal.service.strategy.LoginStrategy;
 import cool.drinkup.drinkup.user.internal.service.strategy.LoginStrategyFactory;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,7 +44,6 @@ import lombok.RequiredArgsConstructor;
 @Tag(name = "认证管理", description = "用户认证相关的接口，包括注册、登录和登出")
 public class AuthController {
 
-    private final UserService userService;
     private final SmsSender smsSender;
     private final UserMapper userMapper;
     private final LoginStrategyFactory loginStrategyFactory;
@@ -71,6 +72,12 @@ public class AuthController {
         return String.valueOf(code);
     }
 
+    @LogRecord(
+        type = UserEvent.USER,
+        subType = "{{#_ret.body.data.isNewUser ? T(cool.drinkup.drinkup.common.log.event.UserEvent$BehaviorEvent).REGISTER : T(cool.drinkup.drinkup.common.log.event.UserEvent$BehaviorEvent).LOGIN}}",
+        bizNo = "{{#_ret.body.data.user.id}}",
+        success = "用户{{#_ret.body.data.user.id}}登录成功"
+    )
     @Operation(summary = "用户登录", description = "支持多种登录方式：手机号验证码登录和 Google 登录")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "登录成功"),
@@ -100,7 +107,9 @@ public class AuthController {
             }
 
             // 获取或创建用户
-            User user = loginStrategy.getOrCreateUser(loginRequest);
+            LoginStrategy.LoginResult loginResult = loginStrategy.getOrCreateUser(loginRequest);
+            User user = loginResult.user();
+            boolean isNewUser = loginResult.isNewUser();
 
             // 创建 DrinkupUserDetails
             DrinkupUserDetails userDetails = new DrinkupUserDetails(
@@ -133,6 +142,7 @@ public class AuthController {
             UserLoginResp loginResp = UserLoginResp.builder()
                     .message("登录成功")
                     .user(userMapper.toUserProfileResp(user))
+                    .isNewUser(isNewUser)
                     .build();
 
             return ResponseEntity.ok(CommonResp.success(loginResp));
@@ -143,6 +153,12 @@ public class AuthController {
         }
     }
 
+    @LogRecord(
+        type = UserEvent.USER,
+        subType = UserEvent.BehaviorEvent.LOGOUT,
+        bizNo = "null",
+        success = "用户登出成功"
+    )
     @Operation(summary = "用户登出", description = "用户登出并清除会话")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "登出成功")

@@ -9,6 +9,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mzt.logapi.starter.annotation.LogRecord;
+
+import cool.drinkup.drinkup.common.log.event.AIChatEvent;
+import cool.drinkup.drinkup.common.log.event.WineEvent;
 import cool.drinkup.drinkup.shared.dto.WorkflowBartenderChatDto;
 import cool.drinkup.drinkup.shared.spi.CommonResp;
 import cool.drinkup.drinkup.wine.spi.WorkflowWineResp;
@@ -35,6 +39,12 @@ public class WorkflowController {
 
     private final WorkflowService workflowService;
 
+    @LogRecord(
+        type = WineEvent.WINE,
+        subType = WineEvent.BehaviorEvent.COCKTAIL_REQUEST,
+        bizNo = "null",
+        success = "用户调酒单请求成功, 请求内容：{{#userInput.userInput}}"
+    )
     @Operation(
         summary = "处理调酒单请求",
         description = "处理用户输入的鸡尾酒相关工作流"
@@ -43,13 +53,20 @@ public class WorkflowController {
     @PostMapping("/cocktail")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommonResp<WorkflowWineResp>> processCocktailRequest(
-        @Parameter(description = "User input for cocktail workflow") 
+        @Parameter(description = "User input for cocktail workflow")
         @RequestBody WorkflowUserReq userInput
     ) {
         var resp = workflowService.processCocktailRequest(userInput);
         return ResponseEntity.ok(CommonResp.success(resp));
     }
 
+    @LogRecord(
+        type = AIChatEvent.AI_CHAT,
+        subType = AIChatEvent.BehaviorEvent.AI_CHAT,
+        bizNo = "null",
+        success = "用户AI聊天成功, 用户请求：{{#userInput.messages.$[#this != null].content}}",
+        extra = "{{@logExtraUtil.getLogExtra(#_ret.body.data)}}"
+    )
     @Operation(
         summary = "与机器人聊天",
         description = "与机器人进行对话"
@@ -65,6 +82,13 @@ public class WorkflowController {
         return ResponseEntity.ok(CommonResp.success(resp));
     }
 
+    @LogRecord(
+        type = AIChatEvent.AI_CHAT,
+        subType = AIChatEvent.BehaviorEvent.BARTENDER_CHAT,
+        bizNo = "{{#_ret.body.data.id}}",
+        success = "用户调酒师聊天成功，生成酒单：{{#_ret.body.data.name}}",
+        extra = "{{@logExtraUtil.getLogExtra(#bartenderInput)}}"
+    )
     @Operation(
         summary = "与调酒师聊天",
         description = "与调酒师进行对话"
@@ -80,6 +104,12 @@ public class WorkflowController {
         return ResponseEntity.ok(CommonResp.success(resp));
     }
 
+    @LogRecord(
+        type = AIChatEvent.AI_CHAT,
+        subType = AIChatEvent.BehaviorEvent.STOCK_RECOGNITION,
+        bizNo = "{{#barId}}",
+        success = "用户库存识别成功，识别到{{#_ret.body.data.stocks.size()}}种库存"
+    )
     @Operation(summary = "库存识别", description = "通过图片识别库存")
     @ApiResponse(responseCode = "200", description = "Successfully recognized stock from image")
     @PostMapping(value = "/recognize-stock/{barId}", consumes = MediaType.APPLICATION_JSON_VALUE)

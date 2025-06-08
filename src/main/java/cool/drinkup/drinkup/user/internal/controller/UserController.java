@@ -12,9 +12,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mzt.logapi.starter.annotation.LogRecord;
+
 import java.util.Map;
 import java.util.Optional;
 
+import cool.drinkup.drinkup.common.log.event.UserEvent;
 import cool.drinkup.drinkup.shared.spi.CommonResp;
 import cool.drinkup.drinkup.user.internal.controller.req.UpdateProfileRequest;
 import cool.drinkup.drinkup.user.internal.controller.resp.UserProfileResp;
@@ -40,6 +43,12 @@ public class UserController {
     private final UserService userService;
     private final UserMapper userMapper;
 
+    @LogRecord(
+        type = UserEvent.USER,
+        subType = UserEvent.BehaviorEvent.PROFILE_GET,
+        bizNo = "{{#_ret.body.data.id}}",
+        success = "用户{{#_ret.body.data.username}}个人资料获取成功"
+    )
     @Operation(summary = "获取个人资料", description = "获取当前登录用户的个人资料信息")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "获取成功"),
@@ -59,6 +68,12 @@ public class UserController {
                 .orElse(ResponseEntity.ok(CommonResp.error("用户不存在")));
     }
 
+    @LogRecord(
+        type = UserEvent.USER,
+        subType = UserEvent.BehaviorEvent.PROFILE_UPDATE,
+        bizNo = "{{#_ret.body.data.id}}",
+        success = "用户{{#_ret.body.data.username}}更新个人资料成功"
+    )
     @Operation(summary = "更新个人资料", description = "更新当前登录用户的个人资料信息")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "更新成功"),
