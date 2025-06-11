@@ -30,12 +30,24 @@ public class DataLoaderService {
             String jsonString;
             try {
                 jsonString = objectMapper.writeValueAsString(wine);
-                Document document = new Document(jsonString, Map.of("wineId", wine.getId()));
+                Document document = new Document(wine.getId().toString(), jsonString, Map.of("wineId", wine.getId()));
                 vectorStore.add(List.of(document));
             } catch (JsonProcessingException e) {
                 log.error("Error converting wine to JSON string: {}", e.getMessage());
                 continue;
             }
+        }
+    }
+
+    public void addData(Long wineId) {
+        Wine wine = wineRepository.findById(wineId).orElseThrow(() -> new RuntimeException("Wine not found"));
+        String jsonString;
+        try {
+            jsonString = objectMapper.writeValueAsString(wine);
+            Document document = new Document(wineId.toString(), jsonString, Map.of("wineId", wine.getId()));
+            vectorStore.add(List.of(document));
+        } catch (JsonProcessingException e) {
+            log.error("Error converting wine to JSON string: {}", e.getMessage());
         }
     }
 }
