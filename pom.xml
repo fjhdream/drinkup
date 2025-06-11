@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>cool.drinkup</groupId>
 	<artifactId>drinkup</artifactId>
-	<version>0.0.1</version>
+	<version>0.0.2</version>
 	<name>drinkup</name>
 	<description>drinkup-backend</description>
 	<url/>
@@ -27,7 +27,7 @@
 		<url/>
 	</scm>
 	<properties>
-		<java.version>24</java.version>
+		<java.version>21</java.version>
 		<mvnd.builder.rule>smart</mvnd.builder.rule>
 
 		<!-- 构镜用到的属性 -->
