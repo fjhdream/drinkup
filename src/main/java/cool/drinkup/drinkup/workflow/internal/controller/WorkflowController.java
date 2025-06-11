@@ -108,7 +108,7 @@ public class WorkflowController {
         type = AIChatEvent.AI_CHAT,
         subType = AIChatEvent.BehaviorEvent.STOCK_RECOGNITION,
         bizNo = "{{#barId}}",
-        success = "用户库存识别成功，识别到{{#_ret.body.data.stocks.size()}}种库存"
+        success = "用户库存识别成功，识别到{{#_ret.body.data.recognizedStocks.size()}}种库存"
     )
     @Operation(summary = "库存识别", description = "通过图片识别库存")
     @ApiResponse(responseCode = "200", description = "Successfully recognized stock from image")
