@@ -102,10 +102,19 @@ public class WineController {
         description = "将酒类相关数据加载到系统中"
     )
     @ApiResponse(responseCode = "200", description = "Successfully loaded wine data")
-    @PostMapping("/load-wine")
+    @PostMapping("/vector-store/load-wine")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> loadWine() {
         dataLoaderService.loadData();
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/vector-store/add-wine/{wineId}")
+    @Operation(summary = "添加特定酒类数据到向量数据库", description = "将酒类数据添加到系统中")
+    @Parameter(name = "wineId", description = "酒ID", required = true)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> addWine(@PathVariable Long wineId) {
+        dataLoaderService.addData(wineId);
         return ResponseEntity.ok().build();
     }
     
