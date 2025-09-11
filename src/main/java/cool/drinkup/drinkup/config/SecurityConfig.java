@@ -60,6 +60,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/wines/random")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/display-items")
+                        .permitAll()
                         // 酒单搜索接口
                         .requestMatchers("/api/workflow/cocktail")
                         .permitAll()
