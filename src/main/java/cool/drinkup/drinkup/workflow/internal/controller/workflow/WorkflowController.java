@@ -4,6 +4,7 @@ import com.mzt.logapi.starter.annotation.LogRecord;
 import cool.drinkup.drinkup.common.log.event.AIChatEvent;
 import cool.drinkup.drinkup.common.log.event.WineEvent;
 import cool.drinkup.drinkup.shared.dto.WorkflowBartenderChatDto;
+import cool.drinkup.drinkup.shared.enums.ThemeEnum;
 import cool.drinkup.drinkup.shared.spi.CommonResp;
 import cool.drinkup.drinkup.user.spi.AuthenticatedUserDTO;
 import cool.drinkup.drinkup.user.spi.AuthenticationServiceFacade;
@@ -33,6 +34,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -150,21 +157,45 @@ public class WorkflowController {
     @LogRecord(
             type = AIChatEvent.AI_CHAT,
             subType = AIChatEvent.BehaviorEvent.BARTENDER_CHAT,
-            bizNo = "{{#_ret.body.data.id}}",
-            success = "用户调酒师聊天成功(公开)，生成酒单：{{#_ret.body.data.name}}",
+            bizNo = "null",
+            success = "用户调酒师聊天成功(公开)，生成{{#_ret.body.data.size()}}个主题酒单",
             extra = "{{@logExtraUtil.getLogExtra(#bartenderInput)}}")
-    @Operation(summary = "与调酒师聊天v2(公开)", description = "与调酒师进行对话（公开接口，仅userDemand）")
+    @Operation(summary = "与调酒师聊天v2(公开)", description = "与调酒师进行对话（公开接口，仅userDemand），并行生成多个主题的酒单列表")
     @ApiResponse(responseCode = "200", description = "Successfully chatted with the bartender (public)")
     @PostMapping("/v2/bartender/public")
-    public ResponseEntity<CommonResp<WorkflowBartenderChatDto>> mixDrinkV2Public(
+    public ResponseEntity<CommonResp<List<WorkflowBartenderChatDto>>> mixDrinkV2Public(
             @RequestBody WorkflowBartenderUserDemandReq bartenderInput) {
-        var v2Req = new WorkflowBartenderChatV2Req();
-        v2Req.setUserDemand(bartenderInput.getUserDemand());
-        var resp = workflowService.mixDrinkV2(v2Req, bartenderInput.getUserId());
-        if (resp == null) {
-            return ResponseEntity.ok(CommonResp.error("Error mixing drink"));
+
+        // 使用虚拟线程执行器
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<CompletableFuture<WorkflowBartenderChatDto>> futures = Arrays.stream(ThemeEnum.values())
+                    .map(theme -> CompletableFuture.supplyAsync(
+                            () -> {
+                                var v2Req = new WorkflowBartenderChatV2Req();
+                                v2Req.setUserDemand(bartenderInput.getUserDemand());
+                                v2Req.setTheme(theme.name());
+
+                                var resp = workflowService.mixDrinkV2(v2Req, bartenderInput.getUserId());
+                                if (resp == null) {
+                                    log.warn("Failed to generate drink for" + " theme: {}", theme);
+                                }
+                                return resp;
+                            },
+                            executor))
+                    .toList();
+
+            // 等待所有任务完成并收集结果
+            List<WorkflowBartenderChatDto> drinkList = futures.stream()
+                    .map(CompletableFuture::join)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            if (drinkList.isEmpty()) {
+                return ResponseEntity.ok(CommonResp.error("Error mixing drinks"));
+            }
+
+            return ResponseEntity.ok(CommonResp.success(drinkList));
         }
-        return ResponseEntity.ok(CommonResp.success(resp));
     }
 
     @LogRecord(
