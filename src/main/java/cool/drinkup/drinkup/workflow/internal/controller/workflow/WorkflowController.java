@@ -28,7 +28,6 @@ import cool.drinkup.drinkup.workflow.internal.controller.workflow.resp.WorkflowS
 import cool.drinkup.drinkup.workflow.internal.controller.workflow.resp.WorkflowTranslateResp;
 import cool.drinkup.drinkup.workflow.internal.controller.workflow.resp.WorkflowUserChatResp;
 import cool.drinkup.drinkup.workflow.internal.controller.workflow.resp.WorkflowUserChatV2Resp;
-import cool.drinkup.drinkup.workflow.internal.controller.workflow.resp.WorkflowUserChatV2StreamResp;
 import cool.drinkup.drinkup.workflow.internal.service.WorkflowService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -50,6 +49,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
 @Slf4j
@@ -282,10 +282,9 @@ public class WorkflowController {
             success = "用户AI流式聊天成功, 用户请求：{{#userInput.userMessage}}")
     @Operation(summary = "与机器人流式聊天v2", description = "与机器人进行流式对话v2，透传到Python Agent，返回所有中间事件")
     @ApiResponse(responseCode = "200", description = "Successfully started streaming chat with the bot")
-    @PostMapping(value = "/v2/chat/stream", produces = MediaType.APPLICATION_NDJSON_VALUE)
+    @PostMapping(value = "/v2/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @PreAuthorize("isAuthenticated()")
-    public Flux<CommonResp<WorkflowUserChatV2StreamResp>> chatV2Stream(
-            @RequestBody WorkflowUserChatV2StreamReq userInput) {
+    public SseEmitter chatV2Stream(@RequestBody WorkflowUserChatV2StreamReq userInput) {
         // 从认证信息中获取用户ID
         String userId = authenticationServiceFacade
                 .getCurrentAuthenticatedUser()
@@ -295,16 +294,68 @@ public class WorkflowController {
 
         log.info("Starting streaming chat v2 for user: {}, message: {}", userId, userInput.getUserMessage());
 
-        return workflowService
+        // 创建SSE发射器，设置超时时间为5分钟
+        SseEmitter emitter = new SseEmitter(300000L);
+
+        // 异步处理流式数据
+        workflowService
                 .chatV2Stream(userInput, userId)
-                .map(resp -> {
-                    if (resp != null) {
-                        return CommonResp.success(resp);
-                    } else {
-                        return CommonResp.<WorkflowUserChatV2StreamResp>error("Error in streaming chat with the bot");
-                    }
-                })
-                .onErrorReturn(CommonResp.<WorkflowUserChatV2StreamResp>error("Error in streaming chat with the bot"));
+                .subscribe(
+                        resp -> {
+                            try {
+                                if (resp != null) {
+                                    // 发送成功响应
+                                    emitter.send(SseEmitter.event()
+                                            .data(CommonResp.success(resp), MediaType.APPLICATION_JSON));
+                                } else {
+                                    // 发送错误响应
+                                    emitter.send(SseEmitter.event()
+                                            .data(
+                                                    CommonResp.error("Error in streaming chat with" + " the bot"),
+                                                    MediaType.APPLICATION_JSON));
+                                }
+                            } catch (Exception e) {
+                                log.error("Error sending SSE event", e);
+                                emitter.completeWithError(e);
+                            }
+                        },
+                        error -> {
+                            log.error("Error in streaming chat", error);
+                            try {
+                                // 发送错误事件
+                                emitter.send(SseEmitter.event()
+                                        .data(
+                                                CommonResp.error("Error in streaming chat: " + error.getMessage()),
+                                                MediaType.APPLICATION_JSON));
+                                emitter.completeWithError(error);
+                            } catch (Exception e) {
+                                log.error("Error sending error event", e);
+                                emitter.completeWithError(e);
+                            }
+                        },
+                        () -> {
+                            // 流完成，关闭SSE连接
+                            log.info("Streaming chat completed for user: {}", userId);
+                            emitter.complete();
+                        });
+
+        // 设置超时处理
+        emitter.onTimeout(() -> {
+            log.warn("SSE connection timeout for user: {}", userId);
+            emitter.complete();
+        });
+
+        // 设置错误处理
+        emitter.onError(throwable -> {
+            log.error("SSE connection error for user: {}", userId, throwable);
+        });
+
+        // 设置完成处理
+        emitter.onCompletion(() -> {
+            log.info("SSE connection closed for user: {}", userId);
+        });
+
+        return emitter;
     }
 
     @LogRecord(
