@@ -22,6 +22,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.session.data.redis.RedisSessionRepository;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 import org.springframework.session.web.context.AbstractHttpSessionApplicationInitializer;
+import org.springframework.session.web.http.CookieHttpSessionIdResolver;
+import org.springframework.session.web.http.CookieSerializer;
+import org.springframework.session.web.http.HttpSessionIdResolver;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -87,6 +90,13 @@ public class SessionConfig extends AbstractHttpSessionApplicationInitializer imp
     @Autowired
     public void customize(RedisSessionRepository sessionRepository) {
         sessionRepository.setDefaultMaxInactiveInterval(Duration.ofSeconds(expiredTime));
+    }
+
+    @Bean
+    HttpSessionIdResolver httpSessionIdResolver(CookieSerializer cookieSerializer) {
+        CookieHttpSessionIdResolver cookieResolver = new CookieHttpSessionIdResolver();
+        cookieResolver.setCookieSerializer(cookieSerializer);
+        return new BearerTokenSessionIdResolver(cookieResolver);
     }
 
     @Bean
