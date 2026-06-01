@@ -21,6 +21,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -135,10 +137,16 @@ public class AuthController {
                     HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
                     SecurityContextHolder.getContext());
 
+            // 把 session ID Base64 编码后放进响应体，前端存 Keychain
+            // 编码方式与 CookieSerializer 对齐，BearerTokenSessionIdResolver 会自动解码
+            String encodedSessionId = Base64.getEncoder()
+                    .encodeToString(session.getId().getBytes(StandardCharsets.UTF_8));
+
             UserLoginResp loginResp = UserLoginResp.builder()
                     .message("登录成功")
                     .user(userMapper.toUserProfileResp(user))
                     .isNewUser(isNewUser)
+                    .sessionId(encodedSessionId)
                     .build();
 
             return ResponseEntity.ok(CommonResp.success(loginResp));
