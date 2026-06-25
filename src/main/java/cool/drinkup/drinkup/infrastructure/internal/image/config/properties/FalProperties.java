@@ -19,6 +19,18 @@ public class FalProperties {
     private String endpointId = "fal-ai/fast-sdxl";
     private Integer timeout = 30000;
 
+    /**
+     * 兜底出图模型：主模型（fast-sdxl + LoRA）失败时使用。不依赖 LoRA，靠风格词还原水彩插画风。
+     * 可通过 image.fal.fallback-endpoint-id 切换更便宜的模型（如 fal-ai/flux/schnell）。
+     */
+    private String fallbackEndpointId = "fal-ai/flux-pro";
+
+    /**
+     * 兜底模型的预设风格词（拼在 AI 返回的 image prompt 前面），用于在没有 LoRA 时保持风格统一。
+     */
+    private String fallbackStylePrompt =
+            "flat 2D watercolor illustration, soft pastel colors, hand-drawn style, clean solid pastel background, no people";
+
     private ImageGenerationRequest imageProperties = new ImageGenerationRequest();
 
     /**

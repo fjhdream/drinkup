@@ -17,21 +17,17 @@ import org.springframework.stereotype.Service;
 @Service
 public class ImageGenerateService {
 
-    private final ImageGenerator glifImageGenerator;
-
-    private final ImageGenerator falImageGenerator;
+    private final ImageGenerator falFallbackImageGenerator;
 
     private final ThemeFactory themeFactory;
 
     private final ImageGeneratorFactory imageGeneratorFactory;
 
     public ImageGenerateService(
-            @Qualifier("glifImageGenerator") ImageGenerator glifImageGenerator,
-            @Qualifier("falImageGenerator") ImageGenerator falImageGenerator,
+            @Qualifier("falFallbackImageGenerator") ImageGenerator falFallbackImageGenerator,
             ThemeFactory themeFactory,
             ImageGeneratorFactory imageGeneratorFactory) {
-        this.glifImageGenerator = glifImageGenerator;
-        this.falImageGenerator = falImageGenerator;
+        this.falFallbackImageGenerator = falFallbackImageGenerator;
         this.themeFactory = themeFactory;
         this.imageGeneratorFactory = imageGeneratorFactory;
     }
@@ -51,7 +47,7 @@ public class ImageGenerateService {
             var imageGenerator = imageGeneratorFactory.getImageGenerator(themeImageConfig);
             return imageGenerator.generateImage(prompt);
         } catch (Exception e) {
-            log.error("[IMAGE] generate image failed, use glif to generate image", e);
+            log.error("[IMAGE] primary fal model generate image failed, will retry then fall back", e);
             throw new RetryException(e.getMessage());
         }
     }
@@ -62,6 +58,7 @@ public class ImageGenerateService {
             lowCardinalityKeyValues = {"Tag", "image"})
     @Recover
     public String recover(RetryException e, String prompt, ThemeEnum themeEnum) {
-        return glifImageGenerator.generateImage(prompt);
+        log.warn("[IMAGE] primary fal model failed after retries, falling back to flux (no LoRA) with style prompt");
+        return falFallbackImageGenerator.generateImage(prompt);
     }
 }

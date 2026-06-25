@@ -5,3 +5,13 @@
 3. ALWAYS prefer editing an existing file to creating a new one.
 4. NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
 5. Output an overview of every single dimension of my request. Find points of uncertainty. Then, ask me as many clarifying questions as possible.
+
+## Code instruction
+
+1. code edit NEED pass mvn compile
+
+## Code Style
+
+1. function DON'T more than 100 lines.
+2. PREFERRED interface design
+3. FOLLOW module split structure

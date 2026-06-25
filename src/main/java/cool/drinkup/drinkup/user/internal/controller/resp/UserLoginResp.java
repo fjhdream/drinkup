@@ -21,4 +21,7 @@ public class UserLoginResp {
 
     @Schema(description = "用户信息")
     private UserProfileResp user;
+
+    @Schema(description = "Session ID（Base64 编码，前端保存到 Keychain，后续请求通过 Authorization: Bearer 发送）")
+    private String sessionId;
 }

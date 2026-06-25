@@ -18,6 +18,7 @@ import cool.drinkup.drinkup.workflow.internal.controller.workflow.req.WorkflowSt
 import cool.drinkup.drinkup.workflow.internal.controller.workflow.req.WorkflowTranslateReq;
 import cool.drinkup.drinkup.workflow.internal.controller.workflow.req.WorkflowUserChatReq;
 import cool.drinkup.drinkup.workflow.internal.controller.workflow.req.WorkflowUserChatV2Req;
+import cool.drinkup.drinkup.workflow.internal.controller.workflow.req.WorkflowUserChatV2StreamReq;
 import cool.drinkup.drinkup.workflow.internal.controller.workflow.req.WorkflowUserReq;
 import cool.drinkup.drinkup.workflow.internal.controller.workflow.req.info.Attachment;
 import cool.drinkup.drinkup.workflow.internal.controller.workflow.req.info.BarAttachment;
@@ -29,9 +30,12 @@ import cool.drinkup.drinkup.workflow.internal.controller.workflow.resp.WorkflowS
 import cool.drinkup.drinkup.workflow.internal.controller.workflow.resp.WorkflowTranslateResp;
 import cool.drinkup.drinkup.workflow.internal.controller.workflow.resp.WorkflowUserChatResp;
 import cool.drinkup.drinkup.workflow.internal.controller.workflow.resp.WorkflowUserChatV2Resp;
+import cool.drinkup.drinkup.workflow.internal.controller.workflow.resp.WorkflowUserChatV2StreamResp;
 import cool.drinkup.drinkup.workflow.internal.model.Bar;
 import cool.drinkup.drinkup.workflow.internal.model.BarStock;
 import cool.drinkup.drinkup.workflow.internal.model.Material;
+import cool.drinkup.drinkup.workflow.internal.service.agent.AgentService;
+import cool.drinkup.drinkup.workflow.internal.service.agent.dto.AgentStreamRequest;
 import cool.drinkup.drinkup.workflow.internal.service.bar.BarService;
 import cool.drinkup.drinkup.workflow.internal.service.bartender.BartenderService;
 import cool.drinkup.drinkup.workflow.internal.service.bartender.dto.BartenderParams;
@@ -48,13 +52,19 @@ import cool.drinkup.drinkup.workflow.internal.service.stock.BarStockService;
 import cool.drinkup.drinkup.workflow.internal.service.theme.Theme;
 import cool.drinkup.drinkup.workflow.internal.service.theme.ThemeFactory;
 import cool.drinkup.drinkup.workflow.internal.service.translate.TranslateService;
+import cool.drinkup.drinkup.workflow.internal.util.ContentTypeUtil;
 import cool.drinkup.drinkup.workflow.internal.util.StockDescriptionUtil;
+import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -64,6 +74,9 @@ import reactor.core.publisher.Flux;
 @Service
 @RequiredArgsConstructor
 public class WorkflowService {
+
+    @org.springframework.beans.factory.annotation.Value("${drinkup.agent.base-url:http://drinkup-agent}")
+    private String agentBaseUrl;
 
     private final WineServiceFacade wineServiceFacade;
     private final UserWineServiceFacade userWineServiceFacade;
@@ -80,7 +93,9 @@ public class WorkflowService {
     private final MaterialAnalysisService materialAnalysisService;
     private final MaterialService materialService;
     private final StockDescriptionUtil stockDescriptionUtil;
+    private final ContentTypeUtil contentTypeUtil;
     private final ImageProcessService imageProcessService;
+    private final AgentService agentService;
 
     public WorkflowWineResp processCocktailRequest(WorkflowUserReq userInput) {
         ProcessCocktailRequestDto request = new ProcessCocktailRequestDto();
@@ -104,6 +119,9 @@ public class WorkflowService {
     }
 
     private String extractJson(String chatWithUser) {
+        if (chatWithUser == null) {
+            return null;
+        }
         if (!chatWithUser.contains("```json")) {
             return chatWithUser;
         }
@@ -182,8 +200,26 @@ public class WorkflowService {
     }
 
     public WorkflowBartenderChatDto mixDrinkV2(WorkflowBartenderChatV2Req bartenderInput) {
+        return mixDrinkV2(bartenderInput, null);
+    }
+
+    public WorkflowBartenderChatDto mixDrinkV2(WorkflowBartenderChatV2Req bartenderInput, Long userId) {
+        long startNanos = System.nanoTime();
         var bartenderParam = buildBartenderParams(bartenderInput);
         var chatWithBartender = bartenderService.generateDrinkV2(bartenderInput.getConversationId(), bartenderParam);
+        log.info(
+                "[BARTENDER_V2] traceId: {}, LLM finished in {} ms, theme: {}",
+                bartenderInput.getClientTraceId(),
+                TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos),
+                bartenderParam.getThemeEnum());
+        // LLM 偶发返回 null/空，跳过这张卡（公开接口会 filter 掉 null，只返回成功的卡），避免整批 NPE → 401
+        if (!StringUtils.hasText(chatWithBartender)) {
+            log.warn(
+                    "[BARTENDER_V2] LLM returned null/empty content, skip this card. traceId: {}, theme: {}",
+                    bartenderInput.getClientTraceId(),
+                    bartenderParam.getThemeEnum());
+            return null;
+        }
         var themeEnum = ThemeEnum.fromValue(bartenderParam.getThemeEnum());
         Theme theme = themeFactory.getTheme(themeEnum);
         var json = extractJson(chatWithBartender);
@@ -192,19 +228,58 @@ public class WorkflowService {
             if (chatBotResponse == null) {
                 return null;
             }
+            long imageStartNanos = System.nanoTime();
             String imageUrl = imageGenerateService.generateImage(chatBotResponse.getImagePrompt(), themeEnum);
+            log.info(
+                    "[BARTENDER_V2] traceId: {}, image generation finished in {} ms, theme: {}",
+                    bartenderInput.getClientTraceId(),
+                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - imageStartNanos),
+                    themeEnum);
+            long storeOriginalStartNanos = System.nanoTime();
             String imageId = imageService.storeImage(imageUrl);
+            log.info(
+                    "[BARTENDER_V2] traceId: {}, original image stored in {} ms, theme: {}",
+                    bartenderInput.getClientTraceId(),
+                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - storeOriginalStartNanos),
+                    themeEnum);
+            long removeBackgroundStartNanos = System.nanoTime();
             String processedImageUrl = imageProcessService.removeBackground(imageUrl);
+            log.info(
+                    "[BARTENDER_V2] traceId: {}, background removal finished in {} ms, theme: {}",
+                    bartenderInput.getClientTraceId(),
+                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - removeBackgroundStartNanos),
+                    themeEnum);
+            long storeProcessedStartNanos = System.nanoTime();
             String processedImageId = imageService.storeImage(processedImageUrl);
+            log.info(
+                    "[BARTENDER_V2] traceId: {}, processed image stored in {} ms, theme: {}",
+                    bartenderInput.getClientTraceId(),
+                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - storeProcessedStartNanos),
+                    themeEnum);
             chatBotResponse.setImage(imageId);
             chatBotResponse.setProcessedImage(processedImageId);
             chatBotResponse.setTheme(themeEnum);
             chatBotResponse.setCardStyle(theme.getCardStyle());
             // Convert workflow response to wine response for saving
-            UserWine saveUserWine = userWineServiceFacade.saveUserWine(chatBotResponse);
+            long saveStartNanos = System.nanoTime();
+            UserWine saveUserWine = (userId == null)
+                    ? userWineServiceFacade.saveUserWine(chatBotResponse)
+                    : userWineServiceFacade.saveUserWine(chatBotResponse, userId);
+            log.info(
+                    "[BARTENDER_V2] traceId: {}, database save finished in {} ms, theme: {}, userWineId: {}",
+                    bartenderInput.getClientTraceId(),
+                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - saveStartNanos),
+                    themeEnum,
+                    saveUserWine.getId());
             chatBotResponse.setId(saveUserWine.getId());
             chatBotResponse.setImage(imageService.getImageUrl(imageId));
             chatBotResponse.setProcessedImage(imageService.getImageUrl(processedImageId));
+            log.info(
+                    "[BARTENDER_V2] traceId: {}, total finished in {} ms, theme: {}, userWineId: {}",
+                    bartenderInput.getClientTraceId(),
+                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos),
+                    themeEnum,
+                    saveUserWine.getId());
             return chatBotResponse;
         } catch (JsonProcessingException e) {
             log.error("Error parsing JSON: {}", e.getMessage());
@@ -376,5 +451,150 @@ public class WorkflowService {
             }
         }
         return stockDescription.toString();
+    }
+
+    /**
+     * 流式聊天 v2 - 透传到 Python Agent，返回所有中间事件
+     */
+    public Flux<WorkflowUserChatV2StreamResp> chatV2Stream(WorkflowUserChatV2StreamReq userInput, String userId) {
+        log.info(
+                "Starting streaming chat v2 for user: {}, traceId: {}, conversationId: {}",
+                userId,
+                userInput.getClientTraceId(),
+                userInput.getConversationId());
+
+        // 构建请求参数
+        AgentStreamRequest.AgentParams.AgentParamsBuilder paramsBuilder = AgentStreamRequest.AgentParams.builder()
+                .userStock(buildStockDescription(userInput.getAttachment()))
+                .userInfo("user_id: " + userId);
+
+        // 处理图片附件
+        if (userInput.getAttachment() != null
+                && userInput.getAttachment().getImageAttachmentList() != null
+                && !userInput.getAttachment().getImageAttachmentList().isEmpty()) {
+
+            List<AgentStreamRequest.ImageAttachmentDto> imageAttachments =
+                    userInput.getAttachment().getImageAttachmentList().stream()
+                            .map(img -> {
+                                String base64Data = img.getImageBase64();
+                                String mimeType = StringUtils.hasText(img.getMimeType()) ? img.getMimeType() : null;
+
+                                log.info(
+                                        "AI_IMAGE_ATTACH traceId: {}, imageId: {}, hasBase64: {}, requestedMime: {}",
+                                        userInput.getClientTraceId(),
+                                        img.getImageId(),
+                                        StringUtils.hasText(base64Data),
+                                        mimeType);
+
+                                // 如果没有base64数据但有imageId，从ImageService加载
+                                if (!StringUtils.hasText(base64Data) && StringUtils.hasText(img.getImageId())) {
+                                    try {
+                                        Resource imageResource = imageService.loadImage(img.getImageId());
+                                        if (imageResource instanceof ByteArrayResource) {
+                                            ByteArrayResource byteArrayResource = (ByteArrayResource) imageResource;
+                                            byte[] imageBytes = byteArrayResource.getByteArray();
+                                            base64Data = Base64.getEncoder()
+                                                    .encodeToString(imageBytes);
+                                            mimeType = detectImageMimeType(imageResource, mimeType);
+                                            log.info(
+                                                    "AI_IMAGE_LOAD_OK traceId: {}, imageId: {}, bytes: {}, mime: {}",
+                                                    userInput.getClientTraceId(),
+                                                    img.getImageId(),
+                                                    imageBytes.length,
+                                                    mimeType);
+                                        }
+                                    } catch (Exception e) {
+                                        log.error(
+                                                "AI_IMAGE_LOAD_FAIL traceId: {}, imageId: {}, errorType: {}, error: {}",
+                                                userInput.getClientTraceId(),
+                                                img.getImageId(),
+                                                e.getClass().getSimpleName(),
+                                                e.getMessage(),
+                                                e);
+                                    }
+                                }
+
+                                if (!StringUtils.hasText(base64Data)) {
+                                    log.warn(
+                                            "Skipping empty image attachment for traceId: {}, imageId: {}",
+                                            userInput.getClientTraceId(),
+                                            img.getImageId());
+                                    return null;
+                                }
+
+                                return AgentStreamRequest.ImageAttachmentDto.builder()
+                                        .imageBase64(base64Data)
+                                        .mimeType(StringUtils.hasText(mimeType) ? mimeType : "image/jpeg")
+                                        .build();
+                            })
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+
+            if (!imageAttachments.isEmpty()) {
+                paramsBuilder.imageAttachmentList(imageAttachments);
+            } else {
+                log.warn(
+                        "No valid image attachments available for traceId: {}, returning image load error",
+                        userInput.getClientTraceId());
+                return Flux.just(WorkflowUserChatV2StreamResp.builder()
+                        .event("error")
+                        .conversationId(userInput.getConversationId())
+                        .error(WorkflowUserChatV2StreamResp.ErrorInfo.builder()
+                                .message("图片读取失败，请重新选择图片后再发送")
+                                .conversationId(userInput.getConversationId())
+                                .build())
+                        .build());
+            }
+        }
+
+        AgentStreamRequest agentRequest = AgentStreamRequest.builder()
+                .clientTraceId(userInput.getClientTraceId())
+                .userMessage(userInput.getUserMessage())
+                .userId(userId)
+                .conversationId(userInput.getConversationId())
+                .params(paramsBuilder.build())
+                .build();
+
+        return agentService
+                .chatStream(agentRequest)
+                .filter(data -> data != null && !data.trim().isEmpty())
+                .mapNotNull(rawData -> {
+                    var parsedResponse = agentService.parseSSEData(rawData);
+                    if (parsedResponse != null) {
+                        return agentService.convertToStreamResponse(parsedResponse);
+                    }
+                    return null;
+                })
+                .doOnError(error -> log.error("Error in streaming chat v2, traceId: {}", userInput.getClientTraceId(), error))
+                .doOnComplete(() -> log.info(
+                        "Completed streaming chat v2 for user: {}, traceId: {}",
+                        userId,
+                        userInput.getClientTraceId()));
+    }
+
+    /**
+     * 异步保存会话记忆
+     * 委托给AgentService在虚拟线程池中执行
+     */
+    public void saveConversationMemoryAsync(String conversationId, String userId) {
+        log.info(
+                "Delegating save conversation memory to AgentService - conversationId: {}, userId:" + " {}",
+                conversationId,
+                userId);
+        agentService.saveConversationMemoryAsync(conversationId, userId);
+    }
+
+    private String detectImageMimeType(Resource imageResource, String fallbackMimeType) {
+        try {
+            String detectedMimeType = contentTypeUtil.detectMimeType(imageResource);
+            if (StringUtils.hasText(detectedMimeType)
+                    && !"application/octet-stream".equalsIgnoreCase(detectedMimeType)) {
+                return detectedMimeType;
+            }
+        } catch (Exception e) {
+            log.warn("AI_IMAGE_MIME_DETECT_FAIL errorType: {}, error: {}", e.getClass().getSimpleName(), e.getMessage());
+        }
+
+        return StringUtils.hasText(fallbackMimeType) ? fallbackMimeType : "image/jpeg";
     }
 }
